@@ -1,0 +1,58 @@
+[project]
+name = "mcp-forge-python"
+version = "0.1.0"
+description = "A Python port of the MCP Forge Go project."
+authors = [{ name = "YOUR_NAME", email = "your.email@example.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "pydantic-settings",
+    "tomli",
+    "mcp[cli]",
+    "httpx",
+    "PyJWT",
+    "requests",
+]
+
+[dependency-groups]
+dev = [{ include-group = "lint" }, { include-group = "test" }]
+lint = ["ruff", "pyright"]
+test = ["pytest", "pytest-asyncio", "coverage", "pytest-benchmark"]
+
+[project.scripts]
+mcp-python = "mcp_app.main:main"
+http = "mcp_app.main:main_http"
+stdio = "mcp_app.main:main_stdio"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D203", "D212", "PLR0913", "C901", "PLR0912", "COM812"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["S101", "SLF001"]
+
+[tool.coverage.run]
+branch = false
+parallel = true
+source = ["src", "tests"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+omit = ["src/mcp_app/__init__.py"]

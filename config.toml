@@ -1,0 +1,41 @@
+# MCP Server Configuration
+[server]
+name = "MCP Forge Python"
+version = "0.1.0"
+
+[server.transport]
+type = "http"
+
+[server.transport.http]
+host = "0.0.0.0"
+
+# Middleware Configuration
+[middleware.access_logs]
+excluded_headers = ["authorization"]
+redacted_headers = ["x-api-key"]
+
+[middleware.jwt]
+enabled = true
+
+[middleware.jwt.validation]
+strategy = "local"
+forwarded_header = "X-Validated-Jwt"
+
+[middleware.jwt.validation.local]
+jwks_uri = "https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"
+cache_interval = 10
+
+[[middleware.jwt.validation.local.allow_conditions]]
+expression = 'has(payload.email) && payload.email.endswith("@yourdomain.com")'
+
+# OAuth Configuration (disabled for now)
+[oauth_authorization_server]
+enabled = false
+issuer_uri = "http://localhost:8080/auth/realms/master"
+
+[oauth_protected_resource]
+enabled = false
+resource = "mcp-resource"
+auth_servers = ["http://localhost:8080/auth/realms/master"]
+jwks_uri = "http://localhost:8080/auth/realms/master/protocol/openid-connect/certs"
+scopes_supported = ["openid", "profile", "email"]

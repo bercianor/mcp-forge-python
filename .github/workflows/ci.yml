@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Install just
+        run: cargo install just
+
+      - name: Run linting
+        run: just lint
+
+      - name: Run type checking
+        run: just typing
+
+      - name: Run tests
+        run: uv run -m pytest
+
+      - name: Run benchmarks
+        run: |
+          uv run -m pytest tests/test_benchmarks.py --benchmark-only --benchmark-json=benchmark.json
