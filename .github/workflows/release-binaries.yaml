@@ -51,7 +51,7 @@ jobs:
           python_version=$(grep "^requires-python" pyproject.toml | sed 's/requires-python = "\(.*\)"/\1/' | sed 's/>=//')
           echo "python_version=${python_version:-3.11}" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "${{ steps.read_python_version.outputs.python_version }}"
 
