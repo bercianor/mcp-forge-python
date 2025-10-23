@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=826beb1930c45e1f159505dde4fb78fb59fe0132">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/mcp-forge-python/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Development Guide | MCP Forge Python - Production-Ready MCP Server with OAuth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Development Guide" />
+<meta name="author" content="Ruben" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
+<meta property="og:description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
+<link rel="canonical" href="https://bercianor.es/mcp-forge-python/mcp-forge-python/development.html" />
+<meta property="og:url" content="https://bercianor.es/mcp-forge-python/mcp-forge-python/development.html" />
+<meta property="og:site_name" content="MCP Forge Python - Production-Ready MCP Server with OAuth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Development Guide" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","author":{"@type":"Person","name":"Ruben"},"description":"A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.","headline":"Development Guide","url":"https://bercianor.es/mcp-forge-python/mcp-forge-python/development.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <a id="a-title" href="/mcp-forge-python/">
+          <h1>MCP Forge Python - Production-Ready MCP Server with OAuth</h1>
+        </a>
+        <h2>A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.</h2>
+
+        <section id="downloads">
+          
+          <a href="https://github.com/bercianor/mcp-forge-python" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1 id="development-guide">Development Guide</h1>
+
+<p>This guide explains how to use this MCP-Forge-Python project as a template for developing your own MCP servers.</p>
+
+<h2 id="using-this-template">Using This Template</h2>
+
+<p>This project serves as a production-ready template for building MCP (Model Context Protocol) servers with OAuth support. The current tools are demo examples - replace them with your own functionality.</p>
+
+<h3 id="quick-start">Quick Start</h3>
+
+<ol>
+  <li><strong>Fork or clone this repository</strong></li>
+  <li><strong>Configure placeholders</strong> (see below)</li>
+  <li><strong>Replace demo tools</strong> with your own</li>
+  <li><strong>Customize configuration</strong> for your needs</li>
+</ol>
+
+<h3 id="project-structure-overview">Project Structure Overview</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/mcp_app/
+├── main.py          # FastAPI app, MCP server setup, middlewares
+├── config.py        # Pydantic configuration models
+├── handlers/        # OAuth endpoint handlers
+├── middlewares/     # JWT validation, access logs
+└── tools/router.py  # MCP tools registration
+
+tests/               # Comprehensive test suite
+chart/               # Kubernetes deployment
+config.toml          # Configuration example
+</code></pre></div></div>
+
+<h2 id="replacing-demo-tools">Replacing Demo Tools</h2>
+
+<p>The current tools (<code class="language-plaintext highlighter-rouge">hello_world</code>, <code class="language-plaintext highlighter-rouge">whoami</code>) are examples. Here’s how to replace them:</p>
+
+<h3 id="1-modify-tools">1. Modify Tools</h3>
+
+<p>Edit <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/router.py</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mcp</span> <span class="kn">import</span> <span class="n">Tool</span>
+<span class="kn">from</span> <span class="nn">mcp.server</span> <span class="kn">import</span> <span class="n">Server</span>
+
+<span class="c1"># Remove demo imports
+# from mcp_app.tools.hello_world import hello_world_tool
+# from mcp_app.tools.whoami import whoami_tool
+</span>
+<span class="c1"># Add your tools
+</span><span class="kn">from</span> <span class="nn">my_app.tools.my_tool</span> <span class="kn">import</span> <span class="n">my_tool_function</span>
+
+<span class="k">def</span> <span class="nf">register_tools</span><span class="p">(</span><span class="n">server</span><span class="p">:</span> <span class="n">Server</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="s">"""Register MCP tools with the server."""</span>
+
+    <span class="c1"># Remove demo tools
+</span>    <span class="c1"># server.register_tool(hello_world_tool)
+</span>    <span class="c1"># server.register_tool(whoami_tool)
+</span>
+    <span class="c1"># Register your tools
+</span>    <span class="n">server</span><span class="p">.</span><span class="n">register_tool</span><span class="p">(</span><span class="n">my_tool_function</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="2-create-your-tools">2. Create Your Tools</h3>
+
+<p>Create <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/my_tools.py</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mcp</span> <span class="kn">import</span> <span class="n">Tool</span>
+<span class="kn">from</span> <span class="nn">mcp.server</span> <span class="kn">import</span> <span class="n">Server</span>
+<span class="kn">from</span> <span class="nn">mcp_app.config</span> <span class="kn">import</span> <span class="n">Configuration</span>
+
+<span class="c1"># Get config if needed
+</span><span class="n">config</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c1"># Will be set during app startup
+</span>
+<span class="o">@</span><span class="n">server</span><span class="p">.</span><span class="n">tool</span><span class="p">()</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">my_business_logic_tool</span><span class="p">(</span><span class="n">param1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param2</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="s">"""Execute your business logic.
+
+    Args:
+        param1: Description of parameter 1
+        param2: Description of parameter 2
+
+    Returns:
+        Dictionary with results
+    """</span>
+    <span class="c1"># Your tool implementation here
+</span>    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">"status"</span><span class="p">:</span> <span class="s">"success"</span><span class="p">,</span>
+        <span class="s">"data"</span><span class="p">:</span> <span class="sa">f</span><span class="s">"Processed </span><span class="si">{</span><span class="n">param1</span><span class="si">}</span><span class="s"> with </span><span class="si">{</span><span class="n">param2</span><span class="si">}</span><span class="s">"</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">result</span>
+</code></pre></div></div>
+
+<h3 id="3-update-tests">3. Update Tests</h3>
+
+<p>Modify <code class="language-plaintext highlighter-rouge">tests/test_tools.py</code> to test your new tools instead of the demo ones.</p>
+
+<h3 id="4-update-documentation">4. Update Documentation</h3>
+
+<p>Update README.md and DEVELOPMENT.md to document your tools instead of the demo ones.</p>
+
+<h2 id="configuration-placeholders">Configuration Placeholders</h2>
+
+<p>Before using this template, you must replace all placeholders with your actual values:</p>
+
+<h3 id="files-to-modify">Files to Modify</h3>
+
+<ol>
+  <li><strong><code class="language-plaintext highlighter-rouge">pyproject.toml</code></strong>:
+    <ul>
+      <li>Change <code class="language-plaintext highlighter-rouge">YOUR_NAME</code> and <code class="language-plaintext highlighter-rouge">your.email@example.com</code> to your real name and email</li>
+    </ul>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">chart/values.yaml</code></strong>:
+    <ul>
+      <li>Change <code class="language-plaintext highlighter-rouge">ghcr.io/YOUR_USERNAME/YOUR_REPO</code> to your real container repository</li>
+      <li>Update all example URLs (<code class="language-plaintext highlighter-rouge">your-keycloak.example.com</code>, <code class="language-plaintext highlighter-rouge">your-mcp-domain.example.com</code>) according to your infrastructure</li>
+    </ul>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">config.toml</code></strong>:
+    <ul>
+      <li>Configure Keycloak URLs, JWKS, etc. for your specific environment</li>
+      <li>Change <code class="language-plaintext highlighter-rouge">your-keycloak.example.com</code> and <code class="language-plaintext highlighter-rouge">yourdomain.com</code> to your real values</li>
+    </ul>
+  </li>
+  <li><strong>README files</strong>:
+    <ul>
+      <li>Replace <code class="language-plaintext highlighter-rouge">bercianor/mcp-forge-python</code> in badges with your actual GitHub username/repo</li>
+    </ul>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">.github/CODEOWNERS</code></strong>:
+    <ul>
+      <li>Change <code class="language-plaintext highlighter-rouge">@YOUR_USERNAME</code> to your GitHub username</li>
+    </ul>
+  </li>
+  <li><strong><code class="language-plaintext highlighter-rouge">.github/dependabot.yml</code></strong>:
+    <ul>
+      <li>Change <code class="language-plaintext highlighter-rouge">YOUR_USERNAME</code> to your GitHub username</li>
+    </ul>
+  </li>
+</ol>
+
+<h3 id="all-placeholders-found">All Placeholders Found</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">YOUR_NAME</code> (pyproject.toml)</li>
+  <li><code class="language-plaintext highlighter-rouge">your.email@example.com</code> (pyproject.toml)</li>
+  <li><code class="language-plaintext highlighter-rouge">ghcr.io/YOUR_USERNAME/YOUR_REPO</code> (chart/values.yaml)</li>
+  <li><code class="language-plaintext highlighter-rouge">your-keycloak.example.com</code> (config.toml, chart/values.yaml)</li>
+  <li><code class="language-plaintext highlighter-rouge">your-mcp-domain.example.com</code> (chart/values.yaml)</li>
+  <li><code class="language-plaintext highlighter-rouge">yourdomain.com</code> (config.toml)</li>
+  <li><code class="language-plaintext highlighter-rouge">your-realm</code> (config.toml, chart/values.yaml)</li>
+  <li><code class="language-plaintext highlighter-rouge">PLACEHOLDER</code> (chart/values.yaml - secret key)</li>
+  <li><code class="language-plaintext highlighter-rouge">your-kv/applications/mcp-forge-python/credentials</code> (chart/values.yaml - Vault path)</li>
+  <li><code class="language-plaintext highlighter-rouge">@YOUR_USERNAME</code> (.github/CODEOWNERS)</li>
+  <li><code class="language-plaintext highlighter-rouge">YOUR_USERNAME</code> (.github/dependabot.yml)</li>
+</ul>
+
+<h3 id="example-urls-to-replace">Example URLs to Replace</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">your-keycloak.example.com</code> → Your real Keycloak server</li>
+  <li><code class="language-plaintext highlighter-rouge">your-mcp-domain.example.com</code> → Your real domain</li>
+  <li><code class="language-plaintext highlighter-rouge">@yourdomain.com</code> → Your email domain</li>
+</ul>
+
+<h2 id="customization-options">Customization Options</h2>
+
+<h3 id="adding-new-middlewares">Adding New Middlewares</h3>
+
+<p>Add custom middlewares in <code class="language-plaintext highlighter-rouge">src/mcp_app/middlewares/</code> and register them in <code class="language-plaintext highlighter-rouge">main.py</code>.</p>
+
+<h3 id="modifying-oauth-configuration">Modifying OAuth Configuration</h3>
+
+<p>The OAuth implementation follows RFC 8414 and RFC 9728. Modify handlers in <code class="language-plaintext highlighter-rouge">src/mcp_app/handlers/</code> if needed.</p>
+
+<h3 id="database-integration">Database Integration</h3>
+
+<p>Add database connections, ORMs, or other data sources as needed for your tools.</p>
+
+<h3 id="environment-specific-configs">Environment-Specific Configs</h3>
+
+<p>Create multiple <code class="language-plaintext highlighter-rouge">config.*.toml</code> files for different environments (dev, staging, prod).</p>
+
+<h2 id="deployment">Deployment</h2>
+
+<h3 id="docker">Docker</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Build image</span>
+docker build <span class="nt">-t</span> your-mcp-server <span class="nb">.</span>
+
+<span class="c"># Run container</span>
+docker run <span class="nt">-p</span> 8080:8080 <span class="nt">-v</span> <span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span>/config.toml:/data/config.toml your-mcp-server
+</code></pre></div></div>
+
+<h3 id="kubernetes">Kubernetes</h3>
+
+<p>Use the provided Helm chart in <code class="language-plaintext highlighter-rouge">chart/</code> directory. Update <code class="language-plaintext highlighter-rouge">chart/values.yaml</code> with your configuration.</p>
+
+<h3 id="local-development">Local Development</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install dependencies</span>
+uv <span class="nb">sync</span>
+
+<span class="c"># Run in development mode</span>
+uv run http  <span class="c"># or uv run stdio</span>
+</code></pre></div></div>
+
+<h2 id="testing-your-changes">Testing Your Changes</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Run all tests</span>
+just <span class="nb">test</span>
+
+<span class="c"># Run with coverage</span>
+just cov
+
+<span class="c"># Run all quality checks</span>
+just check-all
+</code></pre></div></div>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<ol>
+  <li>Replace demo tools with your business logic</li>
+  <li>Configure OAuth providers (Keycloak, Auth0, etc.)</li>
+  <li>Set up your deployment infrastructure</li>
+  <li>Add comprehensive tests for your tools</li>
+  <li>Update documentation for your specific use case</li>
+</ol>
+
+<p>For more information, see <a href="contributing-guide.html">Contributing</a> for contribution guidelines.</p>
+
+      </section>
+    </div>
+  </body>
+</html>

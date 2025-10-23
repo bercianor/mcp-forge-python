@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=826beb1930c45e1f159505dde4fb78fb59fe0132">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/mcp-forge-python/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Configuration | MCP Forge Python - Production-Ready MCP Server with OAuth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Configuration" />
+<meta name="author" content="Ruben" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
+<meta property="og:description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
+<link rel="canonical" href="https://bercianor.es/mcp-forge-python/mcp-forge-python/configuration.html" />
+<meta property="og:url" content="https://bercianor.es/mcp-forge-python/mcp-forge-python/configuration.html" />
+<meta property="og:site_name" content="MCP Forge Python - Production-Ready MCP Server with OAuth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Configuration" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","author":{"@type":"Person","name":"Ruben"},"description":"A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.","headline":"Configuration","url":"https://bercianor.es/mcp-forge-python/mcp-forge-python/configuration.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <a id="a-title" href="/mcp-forge-python/">
+          <h1>MCP Forge Python - Production-Ready MCP Server with OAuth</h1>
+        </a>
+        <h2>A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.</h2>
+
+        <section id="downloads">
+          
+          <a href="https://github.com/bercianor/mcp-forge-python" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1 id="configuration">Configuration</h1>
+
+<p>This document explains how to configure the MCP-Forge-Python server for different environments and use cases.</p>
+
+<h2 id="configuration-file">Configuration File</h2>
+
+<p>The server uses a TOML configuration file (<code class="language-plaintext highlighter-rouge">config.toml</code>) with the following structure:</p>
+
+<div class="language-toml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nn">[server]</span>
+<span class="py">name</span> <span class="p">=</span> <span class="s">"mcp-forge-python"</span>
+<span class="py">version</span> <span class="p">=</span> <span class="s">"0.1.0"</span>
+<span class="py">host</span> <span class="p">=</span> <span class="s">"127.0.0.1"</span>
+<span class="py">port</span> <span class="p">=</span> <span class="mi">8080</span>
+<span class="py">transport</span> <span class="p">=</span> <span class="s">"http"</span>  <span class="c"># or "stdio"</span>
+
+<span class="nn">[middleware.access_log]</span>
+<span class="py">enabled</span> <span class="p">=</span> <span class="kc">true</span>
+<span class="py">exclude_headers</span> <span class="p">=</span> <span class="p">[</span><span class="s">"authorization"</span><span class="p">,</span> <span class="s">"cookie"</span><span class="p">]</span>
+<span class="py">redact_headers</span> <span class="p">=</span> <span class="nn">["x-forwarded-user"]</span>
+
+<span class="nn">[middleware.jwt]</span>
+<span class="py">strategy</span> <span class="p">=</span> <span class="s">"local"</span>  <span class="c"># or "external"</span>
+<span class="py">jwks_uri</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"</span>
+<span class="py">cel_condition</span> <span class="p">=</span> <span class="s">"claims.sub != null"</span>
+<span class="py">forwarded_header</span> <span class="p">=</span> <span class="s">"x-forwarded-user"</span>
+
+<span class="nn">[oauth.authorization_server]</span>
+<span class="py">issuer</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm"</span>
+<span class="py">authorization_endpoint</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/auth"</span>
+<span class="py">token_endpoint</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/token"</span>
+<span class="py">jwks_uri</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"</span>
+
+<span class="nn">[oauth.protected_resource]</span>
+<span class="py">audience</span> <span class="p">=</span> <span class="s">"mcp-forge-python"</span>
+<span class="py">scopes_supported</span> <span class="p">=</span> <span class="p">[</span><span class="s">"read"</span><span class="p">,</span> <span class="s">"write"</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h2 id="server-configuration">Server Configuration</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">name</code>: Server name for MCP protocol</li>
+  <li><code class="language-plaintext highlighter-rouge">version</code>: Server version</li>
+  <li><code class="language-plaintext highlighter-rouge">host</code>: Bind address (use “0.0.0.0” for external access)</li>
+  <li><code class="language-plaintext highlighter-rouge">port</code>: Port to listen on</li>
+  <li><code class="language-plaintext highlighter-rouge">transport</code>: “http” for HTTP+SSE or “stdio” for standard I/O</li>
+</ul>
+
+<h2 id="middleware-configuration">Middleware Configuration</h2>
+
+<h3 id="access-logs">Access Logs</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">enabled</code>: Enable/disable access logging</li>
+  <li><code class="language-plaintext highlighter-rouge">exclude_headers</code>: Headers to completely exclude from logs</li>
+  <li><code class="language-plaintext highlighter-rouge">redact_headers</code>: Headers to redact (show as “[REDACTED]”)</li>
+</ul>
+
+<h3 id="jwt-validation">JWT Validation</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">strategy</code>: “local” (validate in server) or “external” (delegate to proxy)</li>
+  <li><code class="language-plaintext highlighter-rouge">jwks_uri</code>: JWKS endpoint for public keys (local strategy)</li>
+  <li><code class="language-plaintext highlighter-rouge">cel_condition</code>: CEL expression for claim validation</li>
+  <li><code class="language-plaintext highlighter-rouge">forwarded_header</code>: Header containing JWT for external strategy</li>
+</ul>
+
+<h2 id="oauth-configuration">OAuth Configuration</h2>
+
+<p>The OAuth configuration implements RFC 8414 (OAuth 2.0 Authorization Server Metadata) and RFC 9728 (OAuth 2.0 Protected Resource Metadata).</p>
+
+<h3 id="authorization-server">Authorization Server</h3>
+
+<p>Metadata about the OAuth provider (Keycloak, Auth0, etc.).</p>
+
+<h3 id="protected-resource">Protected Resource</h3>
+
+<p>Metadata about this MCP server as a protected resource.</p>
+
+<h2 id="environment-specific-configuration">Environment-Specific Configuration</h2>
+
+<p>Create multiple configuration files for different environments:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">config.dev.toml</code> - Development settings</li>
+  <li><code class="language-plaintext highlighter-rouge">config.staging.toml</code> - Staging environment</li>
+  <li><code class="language-plaintext highlighter-rouge">config.prod.toml</code> - Production settings</li>
+</ul>
+
+<p>Load them by setting the <code class="language-plaintext highlighter-rouge">CONFIG_FILE</code> environment variable:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">CONFIG_FILE</span><span class="o">=</span>config.prod.toml
+uv run http
+</code></pre></div></div>
+
+<h2 id="security-notes">Security Notes</h2>
+
+<ul>
+  <li>Default host is <code class="language-plaintext highlighter-rouge">127.0.0.1</code> to prevent accidental exposure</li>
+  <li>Always use HTTPS in production</li>
+  <li>Configure appropriate CORS if needed</li>
+  <li>Validate all configuration values in production</li>
+</ul>
+
+      </section>
+    </div>
+  </body>
+</html>

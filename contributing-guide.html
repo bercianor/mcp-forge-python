@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=826beb1930c45e1f159505dde4fb78fb59fe0132">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/mcp-forge-python/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Contributing to MCP-Forge-Python | MCP Forge Python - Production-Ready MCP Server with OAuth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Contributing to MCP-Forge-Python" />
+<meta name="author" content="Ruben" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
+<meta property="og:description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
+<link rel="canonical" href="https://bercianor.es/mcp-forge-python/mcp-forge-python/contributing-guide.html" />
+<meta property="og:url" content="https://bercianor.es/mcp-forge-python/mcp-forge-python/contributing-guide.html" />
+<meta property="og:site_name" content="MCP Forge Python - Production-Ready MCP Server with OAuth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Contributing to MCP-Forge-Python" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","author":{"@type":"Person","name":"Ruben"},"description":"A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.","headline":"Contributing to MCP-Forge-Python","url":"https://bercianor.es/mcp-forge-python/mcp-forge-python/contributing-guide.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <a id="a-title" href="/mcp-forge-python/">
+          <h1>MCP Forge Python - Production-Ready MCP Server with OAuth</h1>
+        </a>
+        <h2>A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.</h2>
+
+        <section id="downloads">
+          
+          <a href="https://github.com/bercianor/mcp-forge-python" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1 id="contributing-to-mcp-forge-python">Contributing to MCP-Forge-Python</h1>
+
+<p>Thank you for your interest in contributing to MCP-Forge-Python! This document provides guidelines and information for contributors.</p>
+
+<h2 id="development-setup">Development Setup</h2>
+
+<ol>
+  <li>
+    <p><strong>Clone the repository</strong>:</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git clone https://github.com/bercianor/mcp-forge-python.git
+<span class="nb">cd </span>mcp-forge-python
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>Install dependencies</strong>:</p>
+
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>uv <span class="nb">sync</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>Install in development mode</strong>:</p>
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>uv pip <span class="nb">install</span> <span class="nt">-e</span> <span class="nb">.</span>
+</code></pre></div>    </div>
+  </li>
+</ol>
+
+<h2 id="development-workflow">Development Workflow</h2>
+
+<h3 id="code-quality">Code Quality</h3>
+
+<p>We use several tools to maintain code quality:</p>
+
+<ul>
+  <li><strong>Linting &amp; Formatting</strong>: <code class="language-plaintext highlighter-rouge">just lint</code> (uses ruff)</li>
+  <li><strong>Type Checking</strong>: <code class="language-plaintext highlighter-rouge">just typing</code> (uses pyright)</li>
+  <li><strong>Testing</strong>: <code class="language-plaintext highlighter-rouge">just test</code> (uses pytest)</li>
+  <li><strong>Coverage</strong>: <code class="language-plaintext highlighter-rouge">just cov</code> (uses coverage)</li>
+  <li><strong>All Checks</strong>: <code class="language-plaintext highlighter-rouge">just check-all</code></li>
+</ul>
+
+<h3 id="running-tests">Running Tests</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Run all tests</span>
+just <span class="nb">test</span>
+
+<span class="c"># Run a specific test</span>
+just <span class="nb">test </span>tests/test_file.py::test_function_name
+
+<span class="c"># Run tests with coverage</span>
+just cov
+</code></pre></div></div>
+
+<h3 id="code-style-guidelines">Code Style Guidelines</h3>
+
+<ul>
+  <li><strong>Line length</strong>: 100 characters</li>
+  <li><strong>Imports</strong>: stdlib → third-party → local (alphabetical within groups)</li>
+  <li><strong>Types</strong>: Full type hints required, use <code class="language-plaintext highlighter-rouge">from __future__ import annotations</code></li>
+  <li><strong>Naming</strong>: snake_case functions/variables, PascalCase classes, UPPER_CASE constants</li>
+  <li><strong>Docstrings</strong>: Google style with Args/Returns/Raises sections</li>
+  <li><strong>Error handling</strong>: Specific exceptions, avoid bare except</li>
+  <li><strong>Paths</strong>: Use <code class="language-plaintext highlighter-rouge">pathlib.Path</code> instead of strings</li>
+  <li><strong>Async</strong>: Use async/await consistently for async operations</li>
+  <li><strong>Testing</strong>: pytest with fixtures, descriptive test names, avoid magic numbers in assertions</li>
+</ul>
+
+<h3 id="commit-messages">Commit Messages</h3>
+
+<p>We follow conventional commit format:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>type(scope): description
+
+[optional body]
+
+[optional footer]
+</code></pre></div></div>
+
+<p>Types:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">feat</code>: New features</li>
+  <li><code class="language-plaintext highlighter-rouge">fix</code>: Bug fixes</li>
+  <li><code class="language-plaintext highlighter-rouge">docs</code>: Documentation changes</li>
+  <li><code class="language-plaintext highlighter-rouge">style</code>: Code style changes (formatting, etc.)</li>
+  <li><code class="language-plaintext highlighter-rouge">refactor</code>: Code refactoring</li>
+  <li><code class="language-plaintext highlighter-rouge">test</code>: Adding or updating tests</li>
+  <li><code class="language-plaintext highlighter-rouge">chore</code>: Maintenance tasks</li>
+</ul>
+
+<h2 id="project-structure">Project Structure</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/mcp_app/
+├── main.py          # Application entry point
+├── config.py        # Configuration models
+├── handlers/        # OAuth handlers
+├── middlewares/     # Custom middlewares
+└── tools/           # MCP tools
+
+tests/               # Test files
+chart/               # Kubernetes Helm chart
+</code></pre></div></div>
+
+<h2 id="adding-new-tools">Adding New Tools</h2>
+
+<p>To add a new MCP tool:</p>
+
+<ol>
+  <li>Create the tool function in <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/router.py</code></li>
+  <li>Register it in the <code class="language-plaintext highlighter-rouge">register_tools()</code> function</li>
+  <li>Add tests in <code class="language-plaintext highlighter-rouge">tests/test_tools.py</code></li>
+  <li>Update documentation</li>
+</ol>
+
+<p>Example tool:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">mcp</span><span class="p">.</span><span class="n">tool</span><span class="p">()</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">my_tool</span><span class="p">(</span><span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="s">"""Tool description.
+
+    Args:
+        param: Parameter description
+
+    Returns:
+        Result description
+    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s">"Processed: </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s">"</span>
+</code></pre></div></div>
+
+<h2 id="pull-request-process">Pull Request Process</h2>
+
+<ol>
+  <li><strong>Fork</strong> the repository</li>
+  <li><strong>Create a feature branch</strong> from <code class="language-plaintext highlighter-rouge">main</code></li>
+  <li><strong>Make your changes</strong> following the code style guidelines</li>
+  <li><strong>Add tests</strong> for new functionality</li>
+  <li><strong>Run all checks</strong>: <code class="language-plaintext highlighter-rouge">just check-all</code></li>
+  <li><strong>Update documentation</strong> if needed</li>
+  <li><strong>Commit</strong> with conventional commit messages</li>
+  <li><strong>Push</strong> to your fork</li>
+  <li><strong>Create a Pull Request</strong> with a clear description</li>
+</ol>
+
+<h2 id="reporting-issues">Reporting Issues</h2>
+
+<p>When reporting bugs or requesting features:</p>
+
+<ul>
+  <li><strong>Use the issue templates</strong> when available</li>
+  <li><strong>Provide clear steps to reproduce</strong> for bugs</li>
+  <li><strong>Include environment information</strong> (Python version, OS, etc.)</li>
+  <li><strong>Attach logs or error messages</strong> when relevant</li>
+</ul>
+
+<h2 id="license">License</h2>
+
+<p>By contributing to this project, you agree that your contributions will be licensed under the same license as the project (Unlicense).</p>
+
+      </section>
+    </div>
+  </body>
+</html>
