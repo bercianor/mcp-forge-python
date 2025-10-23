@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/bercianor/mcp-forge-python/ci.yml)](https://github.com/bercianor/mcp-forge-python/actions)
-[![Coverage](docs/badges/coverage-badge.svg)](https://github.com/bercianor/mcp-forge-python/actions)
+[![Coverage](https://bercianor.es/mcp-forge-python/docs/badges/coverage-badge.svg)](https://github.com/bercianor/mcp-forge-python/actions)
 [![Template](https://img.shields.io/badge/template-MCP%20Forge%20Python-blue)](https://github.com/bercianor/mcp-forge-python)
 [![Contributors](https://img.shields.io/github/contributors/bercianor/mcp-forge-python)](https://github.com/bercianor/mcp-forge-python/graphs/contributors)
 [![Last Commit](https://img.shields.io/github/last-commit/bercianor/mcp-forge-python)](https://github.com/bercianor/mcp-forge-python)
