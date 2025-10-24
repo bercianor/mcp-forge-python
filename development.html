@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=6eb8d57e0921abd2469497018192808bd0f84068">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=e06ed87205f666a8d908f1c07029906b466ece0d">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -29,7 +29,7 @@
 <title>Development Guide | MCP Forge Python - Production-Ready MCP Server with OAuth</title>
 <meta name="generator" content="Jekyll v3.10.0" />
 <meta property="og:title" content="Development Guide" />
-<meta name="author" content="Ruben" />
+<meta name="author" content="bercianor" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
 <meta property="og:description" content="A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers." />
@@ -40,7 +40,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="Development Guide" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","author":{"@type":"Person","name":"Ruben"},"description":"A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.","headline":"Development Guide","url":"https://bercianor.es/mcp-forge-python/mcp-forge-python/development.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","author":{"@type":"Person","name":"bercianor"},"description":"A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers.","headline":"Development Guide","url":"https://bercianor.es/mcp-forge-python/mcp-forge-python/development.html"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -98,44 +98,11 @@ config.toml          # Configuration example
 
 <p>The current tools (<code class="language-plaintext highlighter-rouge">hello_world</code>, <code class="language-plaintext highlighter-rouge">whoami</code>) are examples. Here’s how to replace them:</p>
 
-<h3 id="1-modify-tools">1. Modify Tools</h3>
-
-<p>Edit <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/router.py</code>:</p>
-
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mcp</span> <span class="kn">import</span> <span class="n">Tool</span>
-<span class="kn">from</span> <span class="nn">mcp.server</span> <span class="kn">import</span> <span class="n">Server</span>
-
-<span class="c1"># Remove demo imports
-# from mcp_app.tools.hello_world import hello_world_tool
-# from mcp_app.tools.whoami import whoami_tool
-</span>
-<span class="c1"># Add your tools
-</span><span class="kn">from</span> <span class="nn">my_app.tools.my_tool</span> <span class="kn">import</span> <span class="n">my_tool_function</span>
-
-<span class="k">def</span> <span class="nf">register_tools</span><span class="p">(</span><span class="n">server</span><span class="p">:</span> <span class="n">Server</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
-    <span class="s">"""Register MCP tools with the server."""</span>
-
-    <span class="c1"># Remove demo tools
-</span>    <span class="c1"># server.register_tool(hello_world_tool)
-</span>    <span class="c1"># server.register_tool(whoami_tool)
-</span>
-    <span class="c1"># Register your tools
-</span>    <span class="n">server</span><span class="p">.</span><span class="n">register_tool</span><span class="p">(</span><span class="n">my_tool_function</span><span class="p">)</span>
-</code></pre></div></div>
-
-<h3 id="2-create-your-tools">2. Create Your Tools</h3>
+<h3 id="1-create-your-tools">1. Create Your Tools</h3>
 
 <p>Create <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/my_tools.py</code>:</p>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mcp</span> <span class="kn">import</span> <span class="n">Tool</span>
-<span class="kn">from</span> <span class="nn">mcp.server</span> <span class="kn">import</span> <span class="n">Server</span>
-<span class="kn">from</span> <span class="nn">mcp_app.config</span> <span class="kn">import</span> <span class="n">Configuration</span>
-
-<span class="c1"># Get config if needed
-</span><span class="n">config</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c1"># Will be set during app startup
-</span>
-<span class="o">@</span><span class="n">server</span><span class="p">.</span><span class="n">tool</span><span class="p">()</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">my_business_logic_tool</span><span class="p">(</span><span class="n">param1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param2</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">my_business_logic_tool</span><span class="p">(</span><span class="n">param1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param2</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
     <span class="s">"""Execute your business logic.
 
     Args:
@@ -153,6 +120,30 @@ config.toml          # Configuration example
     <span class="k">return</span> <span class="n">result</span>
 </code></pre></div></div>
 
+<h4 id="register-your-tools">Register Your Tools</h4>
+
+<p>Edit <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/router.py</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mcp.server</span> <span class="kn">import</span> <span class="n">FastMCP</span>
+
+<span class="c1"># Remove demo imports
+# from mcp_app.tools.hello_world import hello_world
+# from mcp_app.tools.whoami import whoami
+</span>
+<span class="c1"># Add your tools
+</span><span class="kn">from</span> <span class="nn">my_app.tools.my_tools</span> <span class="kn">import</span> <span class="n">my_business_logic_tool</span>
+
+<span class="k">def</span> <span class="nf">register_tools</span><span class="p">(</span><span class="n">mcp</span><span class="p">:</span> <span class="n">FastMCP</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="s">"""Register MCP tools with the server."""</span>
+
+    <span class="c1"># Remove demo tools
+</span>    <span class="c1"># mcp.tool()(hello_world)
+</span>    <span class="c1"># mcp.tool()(whoami)
+</span>
+    <span class="c1"># Register your tools
+</span>    <span class="n">mcp</span><span class="p">.</span><span class="n">tool</span><span class="p">()(</span><span class="n">my_business_logic_tool</span><span class="p">)</span>
+</code></pre></div></div>
+
 <h3 id="3-update-tests">3. Update Tests</h3>
 
 <p>Modify <code class="language-plaintext highlighter-rouge">tests/test_tools.py</code> to test your new tools instead of the demo ones.</p>
@@ -160,6 +151,43 @@ config.toml          # Configuration example
 <h3 id="4-update-documentation">4. Update Documentation</h3>
 
 <p>Update README.md and DEVELOPMENT.md to document your tools instead of the demo ones.</p>
+
+<h2 id="jwt-validation-configuration">JWT Validation Configuration</h2>
+
+<p>The project includes JWT validation middleware for securing tools. By default, it’s configured for local validation using a JWKS endpoint.</p>
+
+<h3 id="using-keycloak">Using Keycloak</h3>
+
+<p>To enable JWT validation with Keycloak:</p>
+
+<ol>
+  <li><strong>Run Keycloak locally</strong> (e.g., via Docker: <code class="language-plaintext highlighter-rouge">docker run -p 8080:8080 quay.io/keycloak/keycloak:latest start-dev</code>).</li>
+  <li><strong>Create a realm and client</strong> in Keycloak admin console.</li>
+  <li><strong>Update <code class="language-plaintext highlighter-rouge">config.toml</code></strong>:
+    <ul>
+      <li>Set <code class="language-plaintext highlighter-rouge">jwks_uri = "http://localhost:8080/realms/your-realm/protocol/openid-connect/certs"</code></li>
+      <li>Adjust <code class="language-plaintext highlighter-rouge">allow_conditions</code> to match your email domain, e.g., <code class="language-plaintext highlighter-rouge">payload.email.endswith("@yourdomain.com")</code></li>
+    </ul>
+  </li>
+  <li><strong>Enable OAuth endpoints</strong> if needed by setting <code class="language-plaintext highlighter-rouge">oauth_authorization_server.enabled = true</code> and <code class="language-plaintext highlighter-rouge">oauth_protected_resource.enabled = true</code>, updating issuer_uri and auth_servers accordingly.</li>
+</ol>
+
+<h3 id="using-auth0">Using Auth0</h3>
+
+<p>To use Auth0 as your identity provider:</p>
+
+<ol>
+  <li><strong>Get your Auth0 tenant details</strong> (tenant name, client ID, etc.).</li>
+  <li><strong>Update <code class="language-plaintext highlighter-rouge">config.toml</code></strong>:
+    <ul>
+      <li>Set <code class="language-plaintext highlighter-rouge">jwks_uri = "https://your-tenant.auth0.com/.well-known/jwks.json"</code></li>
+      <li>Set <code class="language-plaintext highlighter-rouge">allow_conditions</code> to validate claims, e.g., <code class="language-plaintext highlighter-rouge">payload.iss == "https://your-tenant.auth0.com/" and payload.aud == "your-client-id"</code></li>
+    </ul>
+  </li>
+  <li><strong>Ensure Auth0 is configured</strong> to issue JWTs with the required claims.</li>
+</ol>
+
+<p>For external validation (e.g., via a proxy), set <code class="language-plaintext highlighter-rouge">strategy = "external"</code> and configure your proxy to forward validated JWTs in the <code class="language-plaintext highlighter-rouge">X-Validated-Jwt</code> header.</p>
 
 <h2 id="configuration-placeholders">Configuration Placeholders</h2>
 
