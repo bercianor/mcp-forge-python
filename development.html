@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=e06ed87205f666a8d908f1c07029906b466ece0d">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=3f2420f5ab71f89fb5e751ef5145f7996fb9bf9b">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -188,6 +188,21 @@ config.toml          # Configuration example
 </ol>
 
 <p>For external validation (e.g., via a proxy), set <code class="language-plaintext highlighter-rouge">strategy = "external"</code> and configure your proxy to forward validated JWTs in the <code class="language-plaintext highlighter-rouge">X-Validated-Jwt</code> header.</p>
+
+<h3 id="configuring-exposed-jwt-claims">Configuring Exposed JWT Claims</h3>
+
+<p>As a template, this project allows configuring which JWT claims are exposed to MCP tools via the <code class="language-plaintext highlighter-rouge">context</code> module. This is crucial for security, as JWT payloads may contain sensitive information (PII) that should not be accessible to tools.</p>
+
+<ul>
+  <li><strong>Default</strong>: <code class="language-plaintext highlighter-rouge">jwt_exposed_claims = "all"</code> - Exposes all claims in the JWT payload.</li>
+  <li><strong>Secure Option</strong>: <code class="language-plaintext highlighter-rouge">jwt_exposed_claims = ["user_id", "roles", "permissions"]</code> - Only exposes specific claims.</li>
+</ul>
+
+<p><strong>Important</strong>: Review your JWT structure and set <code class="language-plaintext highlighter-rouge">jwt_exposed_claims</code> to only the claims your tools need. Avoid exposing sensitive data like emails, personal info, or internal IDs unless necessary. Update this in <code class="language-plaintext highlighter-rouge">config.toml</code> and test that tools receive only expected data.</p>
+
+<p>Example in <code class="language-plaintext highlighter-rouge">config.toml</code>:</p>
+<div class="language-toml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="py">jwt_exposed_claims</span> <span class="p">=</span> <span class="p">[</span><span class="s">"user_id"</span><span class="p">,</span> <span class="s">"roles"</span><span class="p">]</span>
+</code></pre></div></div>
 
 <h2 id="configuration-placeholders">Configuration Placeholders</h2>
 

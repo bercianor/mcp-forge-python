@@ -115,6 +115,20 @@ To use Auth0 as your identity provider:
 
 For external validation (e.g., via a proxy), set `strategy = "external"` and configure your proxy to forward validated JWTs in the `X-Validated-Jwt` header.
 
+### Configuring Exposed JWT Claims
+
+As a template, this project allows configuring which JWT claims are exposed to MCP tools via the `context` module. This is crucial for security, as JWT payloads may contain sensitive information (PII) that should not be accessible to tools.
+
+- **Default**: `jwt_exposed_claims = "all"` - Exposes all claims in the JWT payload.
+- **Secure Option**: `jwt_exposed_claims = ["user_id", "roles", "permissions"]` - Only exposes specific claims.
+
+**Important**: Review your JWT structure and set `jwt_exposed_claims` to only the claims your tools need. Avoid exposing sensitive data like emails, personal info, or internal IDs unless necessary. Update this in `config.toml` and test that tools receive only expected data.
+
+Example in `config.toml`:
+```toml
+jwt_exposed_claims = ["user_id", "roles"]
+```
+
 ## Configuration Placeholders
 
 Before using this template, you must replace all placeholders with your actual values:
