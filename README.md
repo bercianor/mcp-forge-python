@@ -185,7 +185,3 @@ This project is licensed under the Unlicense - see the [LICENSE](LICENSE) file f
 ## Credits
 
 Complete translation to Python of the [MCP Forge](https://github.com/achetronic/mcp-forge) project (Go), maintaining all functionalities and security level of the original.
-
-```
-
-```

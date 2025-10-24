@@ -5,11 +5,10 @@ plugins:
 
 title: "MCP Forge Python - Production-Ready MCP Server with OAuth"
 description: "A comprehensive MCP (Model Context Protocol) server template with OAuth support, JWT validation, and production-ready deployment options for Python developers."
-author: "Ruben"
+author: "bercianor"
 url: "https://bercianor.es/mcp-forge-python"
 social:
   name: MCP Forge Python
   links:
     - https://github.com/bercianor
     - https://github.com/bercianor/mcp-forge-python
-
