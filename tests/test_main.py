@@ -5,8 +5,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from mcp_app.config import AccessLogsConfig, Configuration, MiddlewareConfig
-from mcp_app.main import app, handlers_manager, main, main_http, main_stdio
+from mcp_app.config import (
+    AccessLogsConfig,
+    Configuration,
+    JWTConfig,
+    MiddlewareConfig,
+    ServerConfig,
+)
+from mcp_app.main import app, handlers_manager, main, main_http, main_stdio, safe_log_config
 
 HTTP_200_OK = 200
 PORT_DEFAULT = 8080
@@ -111,6 +117,26 @@ def test_main_http_function(mock_uvicorn_run: MagicMock) -> None:
     assert args[0] == app
     assert kwargs["host"] == "127.0.0.1"
     assert kwargs["port"] == PORT_DEFAULT
+
+
+@patch("mcp_app.main.logger")
+def test_safe_log_config(mock_logger: MagicMock) -> None:
+    """Test safe_log_config function."""
+    # Test with server and middleware config
+    config = Configuration(
+        server=ServerConfig(name="TestServer", version="1.0.0"),
+        middleware=MiddlewareConfig(
+            access_logs=AccessLogsConfig(),
+            jwt=JWTConfig.model_validate({"enabled": True}),
+        ),
+    )
+    safe_log_config(config)
+
+    # Verify logging calls
+    calls = [call.args for call in mock_logger.info.call_args_list]
+    assert ("Server Name: %s", "TestServer") in calls
+    assert ("Server Version: %s", "1.0.0") in calls
+    assert ("JWT Middleware: enabled=%s", True) in calls
 
 
 @patch("mcp_app.main.mcp")

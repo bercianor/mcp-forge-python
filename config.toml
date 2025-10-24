@@ -21,9 +21,15 @@ enabled = true
 strategy = "local"
 forwarded_header = "X-Validated-Jwt"
 
+# JWT Claims Exposure Configuration
+# Set to "all" to expose all claims, or list specific claims to expose only those
+# IMPORTANT: Review and limit exposed claims to prevent PII leakage
+jwt_exposed_claims = "all"
+
 [middleware.jwt.validation.local]
 jwks_uri = "https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"
 cache_interval = 10
+whitelist_domains = ["your-keycloak.example.com"]
 
 [[middleware.jwt.validation.local.allow_conditions]]
 expression = 'has(payload.email) && payload.email.endswith("@yourdomain.com")'
@@ -39,3 +45,7 @@ resource = "mcp-resource"
 auth_servers = ["http://localhost:8080/auth/realms/master"]
 jwks_uri = "http://localhost:8080/auth/realms/master/protocol/openid-connect/certs"
 scopes_supported = ["openid", "profile", "email"]
+
+# OAuth Whitelist Domains
+# List of allowed domains for OAuth URIs to prevent SSRF attacks
+oauth_whitelist_domains = ["localhost", "yourdomain.com"]

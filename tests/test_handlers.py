@@ -9,6 +9,8 @@ from fastapi import HTTPException
 from mcp_app.config import Configuration, OAuthAuthorizationServer, OAuthProtectedResourceConfig
 from mcp_app.handlers.handlers import HandlersManager
 
+HTTP_403_FORBIDDEN = 403
+
 HTTP_404_NOT_FOUND = 404
 HTTP_500_INTERNAL_SERVER_ERROR = 500
 
@@ -134,3 +136,111 @@ async def test_handle_oauth_protected_resources_success() -> None:
         "dpop_bound_access_tokens_required": True,
     }
     assert result == expected
+
+
+def test_is_uri_allowed_no_whitelist() -> None:
+    """Test _is_uri_allowed with no whitelist."""
+    config = Configuration(oauth_whitelist_domains=[])
+    manager = HandlersManager(config)
+    assert manager._is_uri_allowed("https://example.com") is True
+
+
+def test_is_uri_allowed_allowed_domain() -> None:
+    """Test _is_uri_allowed with allowed domain."""
+    config = Configuration(oauth_whitelist_domains=["example.com"])
+    manager = HandlersManager(config)
+    assert manager._is_uri_allowed("https://sub.example.com") is True
+
+
+def test_is_uri_allowed_blocked_domain() -> None:
+    """Test _is_uri_allowed with blocked domain."""
+    config = Configuration(oauth_whitelist_domains=["example.com"])
+    manager = HandlersManager(config)
+    assert manager._is_uri_allowed("https://bad.com") is False
+
+
+@pytest.mark.asyncio
+async def test_handle_oauth_authorization_server_uri_blocked() -> None:
+    """Test handle_oauth_authorization_server with blocked URI."""
+    config = Configuration(
+        oauth_authorization_server=OAuthAuthorizationServer(
+            enabled=True, issuer_uri="https://bad.com"
+        ),
+        oauth_whitelist_domains=["example.com"],
+    )
+    manager = HandlersManager(config)
+    with pytest.raises(HTTPException) as exc_info:
+        await manager.handle_oauth_authorization_server()
+    assert exc_info.value.status_code == HTTP_403_FORBIDDEN
+    assert "Issuer URI not in allowed domains" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+@patch("mcp_app.handlers.handlers.httpx.AsyncClient")
+async def test_handle_oauth_authorization_server_sanitized(mock_client_class: MagicMock) -> None:
+    """Test handle_oauth_authorization_server sanitizes response."""
+    mock_response = Mock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "issuer": "https://example.com",
+        "private_key_jwt": "secret",  # Should be removed
+        "authorization_endpoint": "https://example.com/auth",
+    }
+
+    mock_client = AsyncMock()
+    mock_client.get.return_value = mock_response
+    mock_client_class.return_value.__aenter__.return_value = mock_client
+
+    config = Configuration(
+        oauth_authorization_server=OAuthAuthorizationServer(
+            enabled=True, issuer_uri="https://example.com"
+        )
+    )
+    manager = HandlersManager(config)
+
+    result = await manager.handle_oauth_authorization_server()
+    expected = {
+        "issuer": "https://example.com",
+        "authorization_endpoint": "https://example.com/auth",
+    }
+    assert result == expected
+
+
+@pytest.mark.asyncio
+async def test_handle_oauth_protected_resources_uri_blocked() -> None:
+    """Test handle_oauth_protected_resources with blocked URI."""
+    pr_config = OAuthProtectedResourceConfig(
+        enabled=True,
+        resource="https://api.example.com",
+        auth_servers=["https://bad.com"],
+        jwks_uri="https://auth.example.com/jwks",
+        scopes_supported=["read"],
+    )
+    config = Configuration(
+        oauth_protected_resource=pr_config, oauth_whitelist_domains=["example.com"]
+    )
+    manager = HandlersManager(config)
+    with pytest.raises(HTTPException) as exc_info:
+        await manager.handle_oauth_protected_resources()
+    assert exc_info.value.status_code == HTTP_403_FORBIDDEN
+    assert "Auth server URI not allowed" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_handle_oauth_protected_resources_jwks_uri_blocked() -> None:
+    """Test handle_oauth_protected_resources with blocked JWKS URI."""
+    pr_config = OAuthProtectedResourceConfig(
+        enabled=True,
+        resource="https://api.example.com",
+        auth_servers=["https://auth.example.com"],
+        jwks_uri="https://bad.com/jwks",
+        scopes_supported=["read"],
+    )
+    config = Configuration(
+        oauth_protected_resource=pr_config, oauth_whitelist_domains=["example.com"]
+    )
+    manager = HandlersManager(config)
+    with pytest.raises(HTTPException) as exc_info:
+        await manager.handle_oauth_protected_resources()
+    assert exc_info.value.status_code == HTTP_403_FORBIDDEN
+    assert "JWKS URI not allowed" in str(exc_info.value.detail)
