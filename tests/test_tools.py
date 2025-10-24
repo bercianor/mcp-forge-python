@@ -2,7 +2,9 @@
 
 from unittest.mock import MagicMock
 
-from mcp_app.tools.router import hello_world, register_tools, whoami
+from mcp_app.tools.hello_world import hello_world
+from mcp_app.tools.router import register_tools
+from mcp_app.tools.whoami import whoami
 
 NUM_TOOLS = 2
 
