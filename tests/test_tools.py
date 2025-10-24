@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock
 
-from mcp_app.context import jwt_payload
+from mcp_app.context import jwt_payload, set_exposed_claims, set_jwt_context
 from mcp_app.tools.hello_world import hello_world
 from mcp_app.tools.router import register_tools
 from mcp_app.tools.whoami import whoami
@@ -37,3 +37,13 @@ def test_whoami_tool_with_jwt() -> None:
     jwt_payload.set(test_payload)  # Simulate decoded payload
     result = whoami()
     assert result == test_payload
+
+
+def test_whoami_tool_with_filtered_claims() -> None:
+    """Test whoami tool with filtered JWT claims."""
+    set_exposed_claims(["sub", "roles"])
+    test_payload = {"sub": "user123", "roles": ["admin"], "email": "user@example.com"}
+    set_jwt_context("fake_token", test_payload)
+    result = whoami()
+    assert result == {"sub": "user123", "roles": ["admin"]}
+    assert "email" not in result

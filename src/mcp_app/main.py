@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from mcp.server import FastMCP
 
 from mcp_app.config import Configuration, load_config_from_file
+from mcp_app.context import set_exposed_claims
 from mcp_app.handlers.handlers import HandlersManager
 from mcp_app.middlewares.access_logs import AccessLogsMiddleware
 from mcp_app.middlewares.jwt_validation import JWTValidationMiddleware
@@ -40,6 +41,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001 
             config = load_config_from_file(config_path)
             logger.info("Configuration loaded successfully from %s.", config_path)
             logger.info("Server Name: %s", config.server.name if config.server else "N/A")
+            # Set JWT exposed claims configuration
+            set_exposed_claims(config.jwt_exposed_claims)
             break
         except FileNotFoundError:
             continue

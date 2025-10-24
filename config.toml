@@ -21,6 +21,11 @@ enabled = true
 strategy = "local"
 forwarded_header = "X-Validated-Jwt"
 
+# JWT Claims Exposure Configuration
+# Set to "all" to expose all claims, or list specific claims to expose only those
+# IMPORTANT: Review and limit exposed claims to prevent PII leakage
+jwt_exposed_claims = "all"
+
 [middleware.jwt.validation.local]
 jwks_uri = "https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"
 cache_interval = 10

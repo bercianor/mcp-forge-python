@@ -83,3 +83,15 @@ def test_load_config_from_file_file_not_found() -> None:
         match=r"Configuration file not found at: nonexistent.toml",
     ):
         load_config_from_file("nonexistent.toml")
+
+
+def test_jwt_exposed_claims_default() -> None:
+    """Test that jwt_exposed_claims defaults to 'all'."""
+    config = Configuration()
+    assert config.jwt_exposed_claims == "all"
+
+
+def test_jwt_exposed_claims_custom_list() -> None:
+    """Test setting jwt_exposed_claims to a custom list."""
+    config = Configuration(jwt_exposed_claims=["user_id", "roles"])
+    assert config.jwt_exposed_claims == ["user_id", "roles"]
