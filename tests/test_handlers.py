@@ -224,3 +224,23 @@ async def test_handle_oauth_protected_resources_uri_blocked() -> None:
         await manager.handle_oauth_protected_resources()
     assert exc_info.value.status_code == HTTP_403_FORBIDDEN
     assert "Auth server URI not allowed" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_handle_oauth_protected_resources_jwks_uri_blocked() -> None:
+    """Test handle_oauth_protected_resources with blocked JWKS URI."""
+    pr_config = OAuthProtectedResourceConfig(
+        enabled=True,
+        resource="https://api.example.com",
+        auth_servers=["https://auth.example.com"],
+        jwks_uri="https://bad.com/jwks",
+        scopes_supported=["read"],
+    )
+    config = Configuration(
+        oauth_protected_resource=pr_config, oauth_whitelist_domains=["example.com"]
+    )
+    manager = HandlersManager(config)
+    with pytest.raises(HTTPException) as exc_info:
+        await manager.handle_oauth_protected_resources()
+    assert exc_info.value.status_code == HTTP_403_FORBIDDEN
+    assert "JWKS URI not allowed" in str(exc_info.value.detail)

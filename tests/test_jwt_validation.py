@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from mcp_app.middlewares.jwt_validation import JWKSCache, JWTValidationMiddleware
 
 HTTP_401_UNAUTHORIZED = 401
+HTTP_429_TOO_MANY_REQUESTS = 429
 CACHE_INTERVAL_DEFAULT = 600
 
 
@@ -86,6 +87,31 @@ def test_jwt_validation_middleware_init_local() -> None:
     assert middleware.jwks.uri == "https://example.com/jwks"
 
 
+def test_jwt_validation_middleware_init_local_blocked_uri() -> None:
+    """Test JWTValidationMiddleware init with blocked JWKS URI."""
+    with pytest.raises(ValueError, match=r"JWKS URI https://bad.com/jwks not in whitelist"):
+        JWTValidationMiddleware(
+            MagicMock(),
+            strategy="local",
+            jwks_uri="https://bad.com/jwks",
+            whitelist_domains=["example.com"],
+        )
+
+
+def test_is_uri_allowed() -> None:
+    """Test _is_uri_allowed method."""
+    middleware = JWTValidationMiddleware(MagicMock(), whitelist_domains=["example.com", "api.com"])
+
+    # Allowed domains
+    assert middleware._is_uri_allowed("https://example.com/jwks")
+    assert middleware._is_uri_allowed("https://api.com/keys")
+    assert middleware._is_uri_allowed("https://sub.example.com/jwks")
+
+    # Blocked domains
+    assert not middleware._is_uri_allowed("https://bad.com/jwks")
+    assert not middleware._is_uri_allowed("https://evil.net/keys")
+
+
 @pytest.mark.asyncio
 async def test_dispatch_external_strategy() -> None:
     """Test dispatch with external strategy."""
@@ -127,6 +153,28 @@ async def test_dispatch_local_strategy(mock_get_header: MagicMock) -> None:
         response = await middleware.dispatch(request, call_next)
         call_next.assert_called_once_with(request)
         assert response is not None
+
+
+@pytest.mark.asyncio
+async def test_dispatch_rate_limit_exceeded() -> None:
+    """Test dispatch with rate limit exceeded."""
+    middleware = JWTValidationMiddleware(
+        MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
+    )
+
+    request = MagicMock()
+    request.client = MagicMock(host="192.168.1.1")
+    # Set rate limit to exceed threshold
+    middleware.rate_limit["192.168.1.1"] = 11  # > MAX_RATE_LIMIT_REQUESTS (10)
+
+    call_next = AsyncMock()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await middleware.dispatch(request, call_next)
+
+    assert exc_info.value.status_code == HTTP_429_TOO_MANY_REQUESTS
+    assert "Rate limit exceeded" in str(exc_info.value.detail)
+    call_next.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -371,6 +419,17 @@ def test_check_condition_false() -> None:
     middleware = JWTValidationMiddleware(MagicMock())
     payload = {"user": "test"}
     result = middleware._check_condition("payload_['user'] == 'other'", payload)
+    assert result is False
+
+
+def test_check_condition_endswith() -> None:
+    """Test _check_condition with endswith condition."""
+    middleware = JWTValidationMiddleware(MagicMock())
+    payload = {"email": "user@example.com"}
+    result = middleware._check_condition("payload.email.endswith('@example.com')", payload)
+    assert result is True
+
+    result = middleware._check_condition("payload.email.endswith('@bad.com')", payload)
     assert result is False
 
 

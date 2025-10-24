@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock
 
-from mcp_app.context import jwt_payload, set_exposed_claims, set_jwt_context
+from mcp_app.context import jwt_context_config, jwt_payload, set_exposed_claims, set_jwt_context
 from mcp_app.tools.hello_world import hello_world
 from mcp_app.tools.router import register_tools
 from mcp_app.tools.whoami import whoami
@@ -47,3 +47,22 @@ def test_whoami_tool_with_filtered_claims() -> None:
     result = whoami()
     assert result == {"sub": "user123", "roles": ["admin"]}
     assert "email" not in result
+
+
+def test_whoami_tool_with_all_claims() -> None:
+    """Test whoami tool with all JWT claims exposed."""
+    set_exposed_claims("all")
+    test_payload = {"sub": "user123", "roles": ["admin"], "email": "user@example.com"}
+    set_jwt_context("fake_token", test_payload)
+    result = whoami()
+    assert result == test_payload
+
+
+def test_whoami_tool_with_invalid_claims_config() -> None:
+    """Test whoami tool with invalid exposed claims configuration (fallback)."""
+    # Directly modify config to test fallback
+    jwt_context_config.exposed_claims = None  # type: ignore[assignment]
+    test_payload = {"sub": "user123", "roles": ["admin"], "email": "user@example.com"}
+    set_jwt_context("fake_token", test_payload)
+    result = whoami()
+    assert result == test_payload
