@@ -1,18 +1,20 @@
 """Tool to expose user information."""
 
+from typing import Any
 
-def whoami(jwt: str | None = None) -> str:
+from mcp_app.context import get_jwt_payload
+
+
+def whoami() -> dict[str, Any] | str:
     """
-    Expose information about the user.
-
-    Args:
-        jwt: Validated JWT from middleware.
+    Expose information about the user from the JWT payload.
 
     Returns:
-        User information message.
+        The JWT payload as a dictionary, or an error message if not available.
 
     """
-    if not jwt:
-        return "JWT is empty. Information is not available"
+    payload = get_jwt_payload()
+    if not payload:
+        return "JWT is empty or invalid. Information is not available"
 
-    return f"Success! Data are in the following JWT. You have to decode it first. JWT: {jwt}"
+    return payload
