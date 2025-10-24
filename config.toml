@@ -45,3 +45,7 @@ resource = "mcp-resource"
 auth_servers = ["http://localhost:8080/auth/realms/master"]
 jwks_uri = "http://localhost:8080/auth/realms/master/protocol/openid-connect/certs"
 scopes_supported = ["openid", "profile", "email"]
+
+# OAuth Whitelist Domains
+# List of allowed domains for OAuth URIs to prevent SSRF attacks
+oauth_whitelist_domains = ["localhost", "yourdomain.com"]

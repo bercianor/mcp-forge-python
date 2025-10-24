@@ -5,10 +5,15 @@ This module implements the OAuth-related handlers for the MCP server,
 corresponding to the Go handlers.
 """
 
+import logging
+from urllib.parse import urlparse
+
 import httpx
 from fastapi import HTTPException
 
 from mcp_app.config import Configuration
+
+logger = logging.getLogger(__name__)
 
 
 class HandlersManager:
@@ -17,6 +22,32 @@ class HandlersManager:
     def __init__(self, config: Configuration) -> None:
         """Initialize the handlers manager."""
         self.config = config
+
+    def _is_uri_allowed(self, uri: str) -> bool:
+        """Check if URI domain is in OAuth whitelist."""
+        if not self.config.oauth_whitelist_domains:
+            return True  # Allow all if no whitelist
+        parsed = urlparse(uri)
+        domain = parsed.netloc
+        return any(domain.endswith(allowed) for allowed in self.config.oauth_whitelist_domains)
+
+    def _sanitize_openid_config(self, data: dict) -> dict:
+        """Sanitize OpenID configuration response."""
+        # Remove potentially sensitive fields like private keys, secrets, etc.
+        sensitive_fields = {
+            "private_key_jwt",
+            "client_secret",
+            "registration_access_token",
+            "introspection_endpoint_auth_signing_alg_values_supported",
+            # Add more as needed
+        }
+        sanitized = {}
+        for key, value in data.items():
+            if key not in sensitive_fields:
+                sanitized[key] = value
+            else:
+                logger.warning("Removed sensitive field from OpenID config: %s", key)
+        return sanitized
 
     async def handle_oauth_authorization_server(self) -> dict:
         """
@@ -30,19 +61,22 @@ class HandlersManager:
         ):
             raise HTTPException(status_code=404, detail="OAuth authorization server not enabled")
 
-        remote_url = (
-            f"{self.config.oauth_authorization_server.issuer_uri}/.well-known/openid-configuration"
-        )
+        issuer_uri = self.config.oauth_authorization_server.issuer_uri
+        if not self._is_uri_allowed(issuer_uri):
+            raise HTTPException(status_code=403, detail="Issuer URI not in allowed domains")
 
-        async with httpx.AsyncClient() as client:
+        remote_url = f"{issuer_uri}/.well-known/openid-configuration"
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
             try:
                 response = await client.get(remote_url)
                 response.raise_for_status()
-                return response.json()
+                data = response.json()
+                # Sanitize response: remove potentially sensitive fields
+                return self._sanitize_openid_config(data)
             except httpx.HTTPError as e:
-                raise HTTPException(
-                    status_code=500, detail=f"Error fetching OpenID config: {e!s}"
-                ) from e
+                logger.exception("Error fetching OpenID config from %s", remote_url)
+                raise HTTPException(status_code=500, detail="Error fetching OpenID config") from e
 
     async def handle_oauth_protected_resources(self) -> dict:
         """
@@ -57,6 +91,15 @@ class HandlersManager:
             raise HTTPException(status_code=404, detail="OAuth protected resource not enabled")
 
         pr = self.config.oauth_protected_resource
+
+        # Validate URIs
+        for auth_server in pr.auth_servers:
+            if not self._is_uri_allowed(auth_server):
+                raise HTTPException(
+                    status_code=403, detail=f"Auth server URI not allowed: {auth_server}"
+                )
+        if not self._is_uri_allowed(pr.jwks_uri):
+            raise HTTPException(status_code=403, detail="JWKS URI not allowed")
 
         response = {
             "resource": pr.resource,

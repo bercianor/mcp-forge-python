@@ -124,6 +124,7 @@ class Configuration(BaseModel):
     oauth_authorization_server: OAuthAuthorizationServer | None = None
     oauth_protected_resource: OAuthProtectedResourceConfig | None = None
     jwt_exposed_claims: str | list[str] = "all"
+    oauth_whitelist_domains: list[str] = []
 
 
 # --- Configuration Loading Function ---
