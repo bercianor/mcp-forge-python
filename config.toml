@@ -29,6 +29,7 @@ jwt_exposed_claims = "all"
 [middleware.jwt.validation.local]
 jwks_uri = "https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"
 cache_interval = 10
+whitelist_domains = ["your-keycloak.example.com"]
 
 [[middleware.jwt.validation.local.allow_conditions]]
 expression = 'has(payload.email) && payload.email.endswith("@yourdomain.com")'

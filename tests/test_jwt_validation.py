@@ -325,7 +325,7 @@ async def test_validate_local_missing_kid(mock_get_header: MagicMock) -> None:
     with pytest.raises(HTTPException) as exc_info:
         await middleware._validate_local(request)
     assert exc_info.value.status_code == HTTP_401_UNAUTHORIZED
-    assert "JWT missing kid" in str(exc_info.value.detail)
+    assert "Invalid JWT header" in str(exc_info.value.detail)
 
 
 @pytest.mark.asyncio
@@ -362,7 +362,7 @@ def test_check_condition_simple() -> None:
     """Test _check_condition with simple condition."""
     middleware = JWTValidationMiddleware(MagicMock())
     payload = {"user": "test"}
-    result = middleware._check_condition("payload_['user'] == 'test'", payload)
+    result = middleware._check_condition("payload.user == 'test'", payload)
     assert result is True
 
 
