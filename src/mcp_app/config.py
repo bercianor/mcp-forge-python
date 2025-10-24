@@ -9,7 +9,9 @@ variables for dynamic configuration.
 
 from __future__ import annotations
 
+import logging
 import os
+import re
 from datetime import timedelta  # noqa: TC003
 from pathlib import Path
 
@@ -127,6 +129,36 @@ class Configuration(BaseModel):
 # --- Configuration Loading Function ---
 
 
+def safe_expandvars(content: str, allowed_vars: set[str] | None = None) -> str:
+    """
+    Safely expand environment variables in content.
+
+    Only expands variables that are in the allowed_vars set to prevent accidental
+    exposure of sensitive environment variables.
+
+    Args:
+        content: The string content to expand variables in.
+        allowed_vars: Set of allowed environment variable names. If None, allows all.
+
+    Returns:
+        The content with allowed variables expanded.
+
+    """
+
+    def replacer(match: re.Match[str]) -> str:
+        var_name = match.group(1) or match.group(2)
+        if allowed_vars is not None and var_name not in allowed_vars:
+            # Log warning but don't expand
+            logger = logging.getLogger(__name__)
+            logger.warning("Blocked expansion of disallowed env var: %s", var_name)
+            return match.group(0)  # Return original ${VAR} or $VAR unchanged
+        return os.environ.get(var_name, match.group(0))
+
+    # Match ${VAR} or $VAR patterns
+    pattern = re.compile(r"\$\{([^}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)")
+    return pattern.sub(replacer, content)
+
+
 def load_config_from_file(filepath: str | Path) -> Configuration:
     """
     Read a TOML configuration file.
@@ -146,7 +178,22 @@ def load_config_from_file(filepath: str | Path) -> Configuration:
         raise FileNotFoundError(msg)
 
     raw_content = config_path.read_text(encoding="utf-8")
-    expanded_content = os.path.expandvars(raw_content)
+    # Only allow expansion of common, non-sensitive vars
+    allowed_vars = {
+        "HOME",
+        "USER",
+        "PATH",
+        "PWD",
+        "SHELL",
+        "LANG",
+        "LC_ALL",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "LOGNAME",
+        "USERNAME",
+    }
+    expanded_content = safe_expandvars(raw_content, allowed_vars)
     config_data = tomllib.loads(expanded_content)
 
     return Configuration.model_validate(config_data)

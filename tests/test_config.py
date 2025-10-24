@@ -1,12 +1,13 @@
 """Tests for the configuration module."""
 
+import os
 import tempfile
 from datetime import timedelta
 from pathlib import Path
 
 import pytest
 
-from mcp_app.config import Configuration, load_config_from_file
+from mcp_app.config import Configuration, load_config_from_file, safe_expandvars
 
 
 def test_load_config_from_file_valid() -> None:
@@ -95,3 +96,33 @@ def test_jwt_exposed_claims_custom_list() -> None:
     """Test setting jwt_exposed_claims to a custom list."""
     config = Configuration(jwt_exposed_claims=["user_id", "roles"])
     assert config.jwt_exposed_claims == ["user_id", "roles"]
+
+
+def test_safe_expandvars_allowed() -> None:
+    """Test safe_expandvars with allowed variables."""
+    os.environ["TEST_VAR"] = "expanded_value"
+    try:
+        result = safe_expandvars("${TEST_VAR}", {"TEST_VAR"})
+        assert result == "expanded_value"
+    finally:
+        del os.environ["TEST_VAR"]
+
+
+def test_safe_expandvars_blocked() -> None:
+    """Test safe_expandvars with blocked variables."""
+    os.environ["BLOCKED_VAR"] = "blocked_content"
+    try:
+        result = safe_expandvars("${BLOCKED_VAR}", {"TEST_VAR"})
+        assert result == "${BLOCKED_VAR}"  # Should not expand
+    finally:
+        del os.environ["BLOCKED_VAR"]
+
+
+def test_safe_expandvars_no_restriction() -> None:
+    """Test safe_expandvars without restrictions."""
+    os.environ["ANY_VAR"] = "any_value"
+    try:
+        result = safe_expandvars("${ANY_VAR}")
+        assert result == "any_value"
+    finally:
+        del os.environ["ANY_VAR"]

@@ -30,6 +30,17 @@ logger = logging.getLogger(__name__)
 config: Configuration | None = None
 
 
+def safe_log_config(config: Configuration) -> None:
+    """Log configuration fields safely, avoiding sensitive data."""
+    if config.server:
+        logger.info("Server Name: %s", config.server.name)
+        logger.info("Server Version: %s", config.server.version)
+    # Avoid logging URIs, secrets, or sensitive fields
+    # Only log basic info like enabled features
+    if config.middleware and config.middleware.jwt:
+        logger.info("JWT Middleware: enabled=%s", config.middleware.jwt.enabled)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001  # pragma: no cover
     """Application lifespan context manager."""
@@ -40,7 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001 
         try:
             config = load_config_from_file(config_path)
             logger.info("Configuration loaded successfully from %s.", config_path)
-            logger.info("Server Name: %s", config.server.name if config.server else "N/A")
+            safe_log_config(config)
             # Set JWT exposed claims configuration
             set_exposed_claims(config.jwt_exposed_claims)
             break
