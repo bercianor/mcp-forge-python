@@ -380,3 +380,41 @@ def test_check_condition_error() -> None:
     payload = {"user": "test"}
     result = middleware._check_condition("invalid syntax", payload)
     assert result is False
+
+
+def test_check_condition_injection_attempt() -> None:
+    """Test _check_condition resists code injection attempts."""
+    middleware = JWTValidationMiddleware(MagicMock())
+    payload = {"user": "test"}
+
+    # Attempt to import dangerous modules
+    dangerous_expressions = [
+        "__import__('os').system('echo hacked')",
+        "exec('print(1)')",
+        "eval('1+1')",
+        "__builtins__['eval']('1+1')",
+        "payload.__class__.__bases__[0].__subclasses__()",
+    ]
+
+    for expr in dangerous_expressions:
+        result = middleware._check_condition(expr, payload)
+        assert result is False, f"Expression '{expr}' should not execute"
+
+
+def test_check_condition_fuzzing_basic() -> None:
+    """Test _check_condition with various malformed expressions."""
+    middleware = JWTValidationMiddleware(MagicMock())
+    payload = {"user": "test", "role": "admin"}
+
+    # Test various edge cases and malformed expressions
+    test_cases = [
+        ("payload.user == 'test'", True),
+        ("payload.role == 'admin'", True),
+        ("payload.nonexistent == 'test'", False),  # KeyError should be caught
+        ("", False),  # Empty expression
+        ("payload", False),  # Just payload reference
+    ]
+
+    for expr, expected in test_cases:
+        result = middleware._check_condition(expr, payload)
+        assert result == expected, f"Expression '{expr}' should return {expected}, got {result}"

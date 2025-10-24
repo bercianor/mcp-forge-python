@@ -158,6 +158,52 @@ Ver `config.toml` para ejemplo de configuración.
 
 **Nota de seguridad**: Por defecto, el servidor se ejecuta en `127.0.0.1` para evitar exposiciones no deseadas. Cambia a `0.0.0.0` solo si es necesario y con las medidas de seguridad apropiadas.
 
+## Consideraciones de Seguridad
+
+Esta plantilla implementa varias medidas de seguridad para proteger contra vulnerabilidades comunes. Como plantilla, está diseñada para ser configurable para diferentes escenarios de despliegue.
+
+### Exposición de Claims JWT
+
+Para minimizar la exposición de datos, configura qué claims JWT son accesibles en el contexto:
+
+```toml
+[context]
+jwt_exposed_claims = ["user_id", "roles"]  # Solo exponer claims específicos
+# o
+jwt_exposed_claims = "all"  # Exponer todos los claims (no recomendado para producción)
+```
+
+### Logging de Acceso
+
+Los headers sensibles se redactan automáticamente en los logs:
+
+```toml
+[logging]
+redacted_headers = ["Authorization", "X-API-Key", "Cookie"]
+max_body_size = 1024  # Limitar el tamaño del body logueado
+```
+
+### Rate Limiting
+
+Se implementa rate limiting básico para validación JWT para prevenir ataques de fuerza bruta.
+
+### Validación de URIs
+
+Las URIs de OAuth y JWKS se validan contra dominios en whitelist para prevenir ataques SSRF.
+
+### Dependencias Seguras
+
+Las dependencias se actualizan regularmente para abordar vulnerabilidades conocidas. Ejecuta `uv lock --upgrade` para actualizar a las versiones más recientes seguras.
+
+### Lista de Verificación para Producción
+
+- Usar estrategia JWT "external" con un proxy apropiado (Istio, Envoy)
+- Configurar claims expuestos mínimos
+- Habilitar logging de acceso con redacción
+- Validar todas las URIs contra dominios confiables
+- Mantener dependencias actualizadas
+- Ejecutar tests de seguridad regularmente
+
 ## Documentación
 
 - [Documentación Completa](docs/index.md) - Guía completa incluyendo desarrollo, configuración y contribución.

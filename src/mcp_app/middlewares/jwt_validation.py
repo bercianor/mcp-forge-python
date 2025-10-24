@@ -187,13 +187,16 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
 
     def _check_condition(self, condition: str, payload: dict[str, Any]) -> bool:
         """Check simple conditions safely without eval."""
-        # Simple parser for common patterns: payload.field == value or payload.field.endswith(value)
+        # Simple parser for common patterns: payload.field == value or payload_['field'] == value
         if " == " in condition:
             field, value = condition.split(" == ", 1)
             field = field.strip()
             value = value.strip().strip('"').strip("'")
             if field.startswith("payload."):
                 key = field[8:]  # Remove "payload."
+                return payload.get(key) == value
+            if field.startswith("payload_['") and field.endswith("']"):
+                key = field[10:-2]  # Remove "payload_['" and "']"
                 return payload.get(key) == value
         elif ".endswith(" in condition and condition.endswith(")"):
             parts = condition.split(".endswith(", 1)

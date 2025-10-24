@@ -160,6 +160,52 @@ See `config.toml` for configuration example.
 
 **Security Note**: By default, the server runs on `127.0.0.1` to avoid unwanted exposures. Change to `0.0.0.0` only if necessary and with appropriate security measures.
 
+## Security Considerations
+
+This template implements several security measures to protect against common vulnerabilities. As a template, it's designed to be configurable for different deployment scenarios.
+
+### JWT Claims Exposure
+
+To minimize data exposure, configure which JWT claims are accessible in the context:
+
+```toml
+[context]
+jwt_exposed_claims = ["user_id", "roles"]  # Only expose specific claims
+# or
+jwt_exposed_claims = "all"  # Expose all claims (not recommended for production)
+```
+
+### Access Logging
+
+Sensitive headers are automatically redacted in logs:
+
+```toml
+[logging]
+redacted_headers = ["Authorization", "X-API-Key", "Cookie"]
+max_body_size = 1024  # Limit logged body size
+```
+
+### Rate Limiting
+
+Basic rate limiting is implemented for JWT validation to prevent brute force attacks.
+
+### URI Validation
+
+OAuth and JWKS URIs are validated against whitelisted domains to prevent SSRF attacks.
+
+### Secure Dependencies
+
+Dependencies are regularly updated to address known vulnerabilities. Run `uv lock --upgrade` to update to latest secure versions.
+
+### Production Checklist
+
+- Use "external" JWT strategy with a proper proxy (Istio, Envoy)
+- Configure minimal exposed claims
+- Enable access logging with redaction
+- Validate all URIs against trusted domains
+- Keep dependencies updated
+- Run security tests regularly
+
 ## Documentation
 
 - [Full Documentation](docs/index.md) - Complete guide including development, configuration, and contributing.
