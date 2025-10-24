@@ -1,9 +1,11 @@
 """Benchmarks for MCP tools performance."""
 
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 
+from mcp_app.context import jwt_payload
 from mcp_app.tools.router import hello_world, whoami
 
 
@@ -22,10 +24,11 @@ class TestBenchmarks:
     @pytest.mark.benchmark
     def test_whoami_benchmark(self, benchmark: Callable[[Callable], None]) -> None:  # type: ignore[PGH003]
         """Benchmark whoami tool performance."""
-        # Mock JWT for testing
-        mock_jwt = "mock.jwt.token"
+        # Mock payload for testing
+        mock_payload = {"sub": "user123", "roles": ["admin"]}
+        jwt_payload.set(mock_payload)
 
-        def run_whoami() -> str:
-            return whoami(jwt=mock_jwt)
+        def run_whoami() -> dict[str, Any] | str:
+            return whoami()
 
         benchmark(run_whoami)

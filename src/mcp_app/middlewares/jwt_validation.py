@@ -15,6 +15,8 @@ from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
+from mcp_app.context import set_jwt_context
+
 logger = logging.getLogger(__name__)
 
 
@@ -146,6 +148,9 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
 
         # Set forwarded header
         request.headers.__dict__["_list"].append((self.forwarded_header.encode(), token.encode()))
+
+        # Set JWT in shared context for MCP tools
+        set_jwt_context(token, payload)
 
     def _check_condition(self, condition: str, payload: dict[str, Any]) -> bool:
         """Check simple CEL-like conditions."""

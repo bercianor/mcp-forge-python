@@ -183,7 +183,3 @@ Este proyecto está licenciado bajo Unlicense - consulta el archivo [LICENSE](LI
 ## Créditos
 
 Traducción completa a Python del proyecto [MCP Forge](https://github.com/achetronic/mcp-forge) (Go), manteniendo todas las funcionalidades y nivel de seguridad del original.
-
-```
-
-```

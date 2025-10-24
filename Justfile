@@ -81,3 +81,8 @@ run:
 [group('run')]
 run-stdio:
     uv run stdio
+
+# Run MCP Inspector
+[group('run')]
+dev:
+    bunx --yes @modelcontextprotocol/inspector uv run stdio

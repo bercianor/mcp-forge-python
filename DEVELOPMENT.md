@@ -32,46 +32,12 @@ config.toml          # Configuration example
 
 The current tools (`hello_world`, `whoami`) are examples. Here's how to replace them:
 
-### 1. Modify Tools
-
-Edit `src/mcp_app/tools/router.py`:
-
-```python
-from mcp import Tool
-from mcp.server import Server
-
-# Remove demo imports
-# from mcp_app.tools.hello_world import hello_world_tool
-# from mcp_app.tools.whoami import whoami_tool
-
-# Add your tools
-from my_app.tools.my_tool import my_tool_function
-
-def register_tools(server: Server) -> None:
-    """Register MCP tools with the server."""
-
-    # Remove demo tools
-    # server.register_tool(hello_world_tool)
-    # server.register_tool(whoami_tool)
-
-    # Register your tools
-    server.register_tool(my_tool_function)
-```
-
-### 2. Create Your Tools
+### 1. Create Your Tools
 
 Create `src/mcp_app/tools/my_tools.py`:
 
 ```python
-from mcp import Tool
-from mcp.server import Server
-from mcp_app.config import Configuration
-
-# Get config if needed
-config = None  # Will be set during app startup
-
-@server.tool()
-async def my_business_logic_tool(param1: str, param2: int) -> dict:
+def my_business_logic_tool(param1: str, param2: int) -> dict:
     """Execute your business logic.
 
     Args:
@@ -89,6 +55,31 @@ async def my_business_logic_tool(param1: str, param2: int) -> dict:
     return result
 ```
 
+#### Register Your Tools
+
+Edit `src/mcp_app/tools/router.py`:
+
+```python
+from mcp.server import FastMCP
+
+# Remove demo imports
+# from mcp_app.tools.hello_world import hello_world
+# from mcp_app.tools.whoami import whoami
+
+# Add your tools
+from my_app.tools.my_tools import my_business_logic_tool
+
+def register_tools(mcp: FastMCP) -> None:
+    """Register MCP tools with the server."""
+
+    # Remove demo tools
+    # mcp.tool()(hello_world)
+    # mcp.tool()(whoami)
+
+    # Register your tools
+    mcp.tool()(my_business_logic_tool)
+```
+
 ### 3. Update Tests
 
 Modify `tests/test_tools.py` to test your new tools instead of the demo ones.
@@ -96,6 +87,33 @@ Modify `tests/test_tools.py` to test your new tools instead of the demo ones.
 ### 4. Update Documentation
 
 Update README.md and DEVELOPMENT.md to document your tools instead of the demo ones.
+
+## JWT Validation Configuration
+
+The project includes JWT validation middleware for securing tools. By default, it's configured for local validation using a JWKS endpoint.
+
+### Using Keycloak
+
+To enable JWT validation with Keycloak:
+
+1. **Run Keycloak locally** (e.g., via Docker: `docker run -p 8080:8080 quay.io/keycloak/keycloak:latest start-dev`).
+2. **Create a realm and client** in Keycloak admin console.
+3. **Update `config.toml`**:
+   - Set `jwks_uri = "http://localhost:8080/realms/your-realm/protocol/openid-connect/certs"`
+   - Adjust `allow_conditions` to match your email domain, e.g., `payload.email.endswith("@yourdomain.com")`
+4. **Enable OAuth endpoints** if needed by setting `oauth_authorization_server.enabled = true` and `oauth_protected_resource.enabled = true`, updating issuer_uri and auth_servers accordingly.
+
+### Using Auth0
+
+To use Auth0 as your identity provider:
+
+1. **Get your Auth0 tenant details** (tenant name, client ID, etc.).
+2. **Update `config.toml`**:
+   - Set `jwks_uri = "https://your-tenant.auth0.com/.well-known/jwks.json"`
+   - Set `allow_conditions` to validate claims, e.g., `payload.iss == "https://your-tenant.auth0.com/" and payload.aud == "your-client-id"`
+3. **Ensure Auth0 is configured** to issue JWTs with the required claims.
+
+For external validation (e.g., via a proxy), set `strategy = "external"` and configure your proxy to forward validated JWTs in the `X-Validated-Jwt` header.
 
 ## Configuration Placeholders
 

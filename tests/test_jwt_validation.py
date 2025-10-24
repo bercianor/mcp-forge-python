@@ -353,7 +353,8 @@ async def test_validate_local_success(
 
     await middleware._validate_local(request)
 
-    mock_decode.assert_called_once()
+    # jwt.decode is called once in _validate_local
+    assert mock_decode.call_count == 1
     assert len(request.headers.__dict__["_list"]) == 1
 
 
