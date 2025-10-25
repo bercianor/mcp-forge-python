@@ -123,7 +123,7 @@ def my_tool(param: str) -> str:
 Then register it in `router.py`:
 
 ```python
-from mcp_app.tools.my_tool import my_tool
+from mcp_app.mcp_components.tools.my_tool import my_tool
 
 def register_tools(mcp: FastMCP) -> None:
     mcp.tool()(my_tool)

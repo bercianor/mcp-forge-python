@@ -6,7 +6,8 @@ from typing import Any
 import pytest
 
 from mcp_app.context import jwt_payload
-from mcp_app.tools.router import hello_world, whoami
+from mcp_app.mcp_components.tools.hello_world import hello_world
+from mcp_app.mcp_components.tools.whoami import whoami
 
 
 class TestBenchmarks:
