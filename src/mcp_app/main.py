@@ -45,7 +45,7 @@ def get_host_and_port() -> tuple[str, int]:
     if config and config.server and config.server.transport and config.server.transport.http:
         http_config = config.server.transport.http
         return http_config.host, http_config.port
-    return "127.0.0.1", 8080
+    return "0.0.0.0", 8080  # noqa: S104
 
 
 def main() -> None:
