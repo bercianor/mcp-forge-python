@@ -303,7 +303,8 @@ def test_callback_success(mock_client_class: MagicMock) -> None:
     client = TestClient(test_fastapi_app.app)
     response = client.get("/callback?code=test_code")
     assert response.status_code == HTTP_200_OK
-    assert response.json() == {"access_token": "test_token"}
+    assert "test_token" in response.text
+    assert response.headers["content-type"] == "text/html; charset=utf-8"
 
 
 @patch("httpx.AsyncClient")
