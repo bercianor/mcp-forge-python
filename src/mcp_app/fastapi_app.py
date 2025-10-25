@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from mcp.server import FastMCP
@@ -162,7 +162,7 @@ class FastAPIApp:
         )  # pragma: no cover
         return {"message": f"Hello from {server_name}"}  # pragma: no cover
 
-    async def _login(self) -> Response:
+    async def _login(self, request: Request) -> Response:
         """Redirect to Auth0 login."""
         if (
             not self.config
@@ -178,7 +178,7 @@ class FastAPIApp:
             f"{local_config.issuer}authorize?"
             f"client_id={self.config.auth.client_id}&"
             "response_type=code&"
-            f"redirect_uri={self.config.auth.redirect_uri}&"
+            f"redirect_uri={request.base_url}callback&"
             "scope=openid profile email&"
             f"audience={local_config.audience}"
         )
@@ -186,6 +186,7 @@ class FastAPIApp:
 
     async def _callback(
         self,
+        request: Request,
         code: str | None = None,
         error: str | None = None,
         error_description: str | None = None,
@@ -214,7 +215,7 @@ class FastAPIApp:
             "client_id": self.config.auth.client_id,
             "client_secret": self.config.auth.client_secret,
             "code": code,
-            "redirect_uri": self.config.auth.redirect_uri,
+            "redirect_uri": f"{request.base_url}callback",
         }
         async with httpx.AsyncClient() as client:
             response = await client.post(token_url, data=data, timeout=10.0)

@@ -202,7 +202,6 @@ def test_login_success() -> None:
     # Mock valid config
     mock_auth = MagicMock()
     mock_auth.client_id = "test_client_id"
-    mock_auth.redirect_uri = "http://localhost/callback"
 
     mock_local = MagicMock()
     mock_local.issuer = "https://test.auth0.com/"
@@ -231,7 +230,7 @@ def test_login_success() -> None:
     location = response.headers.get("location", "")
     assert "https://test.auth0.com/authorize?" in location
     assert "client_id=test_client_id" in location
-    assert "redirect_uri=http://localhost/callback" in location
+    assert "redirect_uri=http://testserver/callback" in location
     assert "audience=test_audience" in location
 
 
