@@ -14,5 +14,5 @@ class MCPServer:
 
     def __init__(self, mode: str = "http") -> None:
         """Initialize the MCP server."""
-        self.mcp = FastMCP("MCP-Forge-Python")
+        self.mcp = FastMCP("MCP-Forge-Python", stateless_http=True, json_response=True)
         register_tools(self.mcp, mode)
