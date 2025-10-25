@@ -240,18 +240,28 @@ sse_app.router.redirect_slashes = False
 app.mount("/", sse_app)  # SSE transport
 
 
+def get_host_and_port() -> tuple[str, int]:
+    """Get host and port from configuration or defaults."""
+    if config and config.server and config.server.transport and config.server.transport.http:
+        http_config = config.server.transport.http
+        return http_config.host, http_config.port
+    return "127.0.0.1", 8080
+
+
 def main() -> None:
     """Run the main application."""
     if len(sys.argv) > 1 and sys.argv[1] == "stdio":
         mcp.run(transport="stdio")
     else:
         # Default to HTTP
-        uvicorn.run(app, host="127.0.0.1", port=8080)
+        host, port = get_host_and_port()
+        uvicorn.run(app, host=host, port=port)
 
 
 def main_http() -> None:
     """Run the HTTP server."""
-    uvicorn.run(app, host="127.0.0.1", port=8080)  # pragma: no cover
+    host, port = get_host_and_port()
+    uvicorn.run(app, host=host, port=port)  # pragma: no cover
 
 
 def main_stdio() -> None:
