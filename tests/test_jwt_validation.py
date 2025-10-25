@@ -126,7 +126,11 @@ async def test_dispatch_external_strategy() -> None:
 
 @pytest.mark.asyncio
 @patch("mcp_app.middlewares.jwt_validation.jwt.get_unverified_header")
-async def test_dispatch_local_strategy(mock_get_header: MagicMock) -> None:
+@patch("mcp_app.middlewares.jwt_validation.jwt.PyJWK")
+@patch("mcp_app.middlewares.jwt_validation.jwt.decode")
+async def test_dispatch_local_strategy(
+    mock_decode: MagicMock, mock_pyjwk: MagicMock, mock_get_header: MagicMock
+) -> None:
     """Test dispatch with local strategy."""
     mock_get_header.return_value = {"kid": "key1"}
 
@@ -134,7 +138,16 @@ async def test_dispatch_local_strategy(mock_get_header: MagicMock) -> None:
         MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
     )
     assert middleware.jwks is not None
-    middleware.jwks.keys = {"key1": {"kid": "key1"}}
+    middleware.jwks.keys = {
+        "key1": {
+            "kid": "key1",
+            "kty": "oct",
+            "k": (
+                "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-"
+                "1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow"
+            ),
+        }
+    }
 
     request = MagicMock()
     request.headers.get.return_value = "Bearer token"
@@ -142,17 +155,13 @@ async def test_dispatch_local_strategy(mock_get_header: MagicMock) -> None:
 
     call_next = AsyncMock(return_value=MagicMock())
 
-    with (
-        patch("mcp_app.middlewares.jwt_validation.jwt.PyJWK") as mock_pyjwk,
-        patch("mcp_app.middlewares.jwt_validation.jwt.decode") as mock_decode,
-    ):
-        mock_key = MagicMock()
-        mock_pyjwk.return_value.key = mock_key
-        mock_decode.return_value = {"user": "test"}
+    mock_key = MagicMock()
+    mock_pyjwk.return_value.key = mock_key
+    mock_decode.return_value = {"user": "test"}
 
-        response = await middleware.dispatch(request, call_next)
-        call_next.assert_called_once_with(request)
-        assert response is not None
+    response = await middleware.dispatch(request, call_next)
+    call_next.assert_called_once_with(request)
+    assert response is not None
 
 
 @pytest.mark.asyncio
@@ -169,12 +178,29 @@ async def test_dispatch_rate_limit_exceeded() -> None:
 
     call_next = AsyncMock()
 
-    with pytest.raises(HTTPException) as exc_info:
-        await middleware.dispatch(request, call_next)
+    response = await middleware.dispatch(request, call_next)
 
-    assert exc_info.value.status_code == HTTP_429_TOO_MANY_REQUESTS
-    assert "Rate limit exceeded" in str(exc_info.value.detail)
+    assert response.status_code == HTTP_429_TOO_MANY_REQUESTS
     call_next.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_dispatch_options_request() -> None:
+    """Test dispatch with OPTIONS request (CORS preflight)."""
+    middleware = JWTValidationMiddleware(
+        MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
+    )
+
+    request = MagicMock()
+    request.method = "OPTIONS"
+
+    call_next = AsyncMock()
+    call_next.return_value = MagicMock()
+
+    response = await middleware.dispatch(request, call_next)
+
+    call_next.assert_called_once_with(request)
+    assert response is not None
 
 
 @pytest.mark.asyncio
@@ -191,6 +217,24 @@ async def test_validate_local_no_jwks(mock_get_header: MagicMock) -> None:
         await middleware._validate_local(request)
     assert exc_info.value.status_code == HTTP_401_UNAUTHORIZED
     assert "JWKS not configured" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+@patch("mcp_app.middlewares.jwt_validation.jwt.get_unverified_header")
+async def test_validate_local_invalid_header(mock_get_header: MagicMock) -> None:
+    """Test _validate_local with invalid JWT header."""
+    mock_get_header.side_effect = jwt.PyJWTError("Invalid header")
+
+    middleware = JWTValidationMiddleware(
+        MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
+    )
+    request = MagicMock()
+    request.headers.get.return_value = "Bearer token"
+
+    with pytest.raises(HTTPException) as exc_info:
+        await middleware._validate_local(request)
+    assert exc_info.value.status_code == HTTP_401_UNAUTHORIZED
+    assert "Invalid JWT header" in str(exc_info.value.detail)
 
 
 @pytest.mark.asyncio
@@ -228,7 +272,7 @@ async def test_validate_local_invalid_jwk(
         MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
     )
     assert middleware.jwks is not None
-    middleware.jwks.keys = {"key1": {"kid": "key1"}}
+    middleware.jwks.keys = {"key1": {"kid": "key1", "kty": "RSA"}}
 
     request = MagicMock()
     request.headers.get.return_value = "Bearer token"
@@ -256,7 +300,7 @@ async def test_validate_local_expired_token(
         MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
     )
     assert middleware.jwks is not None
-    middleware.jwks.keys = {"key1": {"kid": "key1"}}
+    middleware.jwks.keys = {"key1": {"kid": "key1", "kty": "RSA"}}
 
     request = MagicMock()
     request.headers.get.return_value = "Bearer token"
@@ -284,7 +328,7 @@ async def test_validate_local_invalid_token(
         MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
     )
     assert middleware.jwks is not None
-    middleware.jwks.keys = {"key1": {"kid": "key1"}}
+    middleware.jwks.keys = {"key1": {"kid": "key1", "kty": "RSA"}}
 
     request = MagicMock()
     request.headers.get.return_value = "Bearer token"
@@ -315,7 +359,7 @@ async def test_validate_local_condition_fail(
         allow_conditions=["payload_['user'] == 'admin'"],
     )
     assert middleware.jwks is not None
-    middleware.jwks.keys = {"key1": {"kid": "key1"}}
+    middleware.jwks.keys = {"key1": {"kid": "key1", "kty": "RSA"}}
 
     request = MagicMock()
     request.headers.get.return_value = "Bearer token"
@@ -390,10 +434,13 @@ async def test_validate_local_success(
     mock_decode.return_value = {"user": "test"}
 
     middleware = JWTValidationMiddleware(
-        MagicMock(), strategy="local", jwks_uri="https://example.com/jwks"
+        MagicMock(),
+        strategy="local",
+        jwks_uri="https://example.com/jwks",
+        allow_conditions=["payload.user == 'test'"],
     )
     assert middleware.jwks is not None
-    middleware.jwks.keys = {"key1": {"kid": "key1"}}
+    middleware.jwks.keys = {"key1": {"kid": "key1", "kty": "RSA"}}
 
     request = MagicMock()
     request.headers.get.return_value = "Bearer token"

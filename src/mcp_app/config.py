@@ -65,6 +65,8 @@ class JWTValidationLocalConfig(BaseModel):
     jwks_uri: str
     cache_interval: timedelta
     allow_conditions: list[JWTValidationAllowCondition] = []
+    issuer: str | None = None
+    audience: str | None = None
 
 
 class JWTValidationConfig(BaseModel):

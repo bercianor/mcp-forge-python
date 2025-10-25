@@ -14,6 +14,7 @@ import jwt
 import requests
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 from starlette.types import ASGIApp
 
 from mcp_app.context import set_jwt_context
@@ -61,20 +62,25 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: ASGIApp,  # noqa: ARG002
+        app: ASGIApp,
         strategy: str = "external",
         forwarded_header: str = "X-Validated-Jwt",
         jwks_uri: str | None = None,
         cache_interval: int = 300,
         allow_conditions: list[str] | None = None,
         whitelist_domains: list[str] | None = None,
+        issuer: str | None = None,
+        audience: str | None = None,
     ) -> None:
         """Initialize the JWT validation middleware."""
+        super().__init__(app)
         self.strategy = strategy
         self.forwarded_header = forwarded_header
-        self.jwks: JWKSCache | None = None
+        self.jwks = JWKSCache(jwks_uri, cache_interval) if jwks_uri else None
         self.allow_conditions = allow_conditions or []
         self.whitelist_domains = whitelist_domains or []
+        self.issuer = issuer
+        self.audience = audience
         self.rate_limit: dict[str, int] = {}  # Simple rate limit by IP
 
         if strategy == "local" and jwks_uri:
@@ -95,8 +101,15 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         """Process the request and validate JWT if configured."""
+        # Skip JWT validation for OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         if self.strategy == "local":
-            await self._validate_local(request)
+            try:
+                await self._validate_local(request)
+            except HTTPException as e:
+                return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
         # For external strategy, assume JWT is already validated by upstream proxy
 
         return await call_next(request)
@@ -106,6 +119,9 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
         # Simple rate limiting
         client_ip = request.client.host if request.client else "unknown"
         if self.rate_limit.get(client_ip, 0) > MAX_RATE_LIMIT_REQUESTS:
+            logger.warning(
+                "Rate limit exceeded from %s for %s %s", client_ip, request.method, request.url.path
+            )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Rate limit exceeded",
@@ -114,8 +130,15 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
 
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
+            logger.warning(
+                "Missing or invalid Authorization header from %s for %s %s",
+                client_ip,
+                request.method,
+                request.url.path,
+            )
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Authorization header"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Authorization header",
             )
 
         token = auth_header[7:]  # Remove "Bearer "
@@ -123,25 +146,47 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
         # Decode header to get kid
         try:
             header = jwt.get_unverified_header(token)
-            kid = header.get("kid")
-            if not kid:
-                raise HTTPException(  # noqa: TRY301
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT missing kid"
-                )
-        except Exception as e:
+        except jwt.PyJWTError as e:
             detail = f"Invalid JWT header: {type(e).__name__}"
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail) from e
+            logger.warning(
+                "Invalid JWT header from %s for %s %s: %s",
+                client_ip,
+                request.method,
+                request.url.path,
+                detail,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=detail,
+            ) from e
+
+        kid = header.get("kid")
+        if not kid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid JWT header",
+            )
 
         # Get key from JWKS
         if not self.jwks:
+            logger.error("JWKS not configured")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="JWKS not configured"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="JWKS not configured",
             )
 
         key_data = self.jwks.get_key(kid)
         if not key_data:
+            logger.warning(
+                "Key not found in JWKS for kid %s from %s for %s %s",
+                kid,
+                client_ip,
+                request.method,
+                request.url.path,
+            )
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Key not found in JWKS"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Key not found in JWKS",
             )
 
         # Convert JWK to PEM
@@ -149,29 +194,57 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
             jwk = jwt.PyJWK(key_data)
             public_key = jwk.key
         except Exception as e:
+            logger.warning(
+                "Invalid JWK from %s for %s %s: %s",
+                client_ip,
+                request.method,
+                request.url.path,
+                type(e).__name__,
+            )
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid JWK: {type(e).__name__}"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid JWK: {type(e).__name__}",
             ) from e
 
         # Verify and decode JWT
         try:
             payload = jwt.decode(
-                token, public_key, algorithms=["RS256"], options={"verify_exp": True}
+                token,
+                public_key,
+                algorithms=["RS256"],
+                audience=self.audience,
+                issuer=self.issuer,
+                options={"verify_exp": True, "verify_iss": True, "verify_aud": True},
             )
         except jwt.ExpiredSignatureError as err:
+            logger.warning(
+                "JWT expired from %s for %s %s", client_ip, request.method, request.url.path
+            )
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT expired"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="JWT expired",
             ) from err
         except jwt.InvalidTokenError as err:
+            logger.warning(
+                "Invalid JWT from %s for %s %s", client_ip, request.method, request.url.path
+            )
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid JWT"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid JWT",
             ) from err
 
         # Check allow conditions
         for condition in self.allow_conditions:
             if not self._check_condition(condition, payload):
+                logger.warning(
+                    "JWT does not meet conditions from %s for %s %s",
+                    client_ip,
+                    request.method,
+                    request.url.path,
+                )
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="JWT does not meet conditions"
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="JWT does not meet conditions",
                 )
 
         # Set forwarded header (mask token for logging)
