@@ -12,7 +12,7 @@ from typing import Any
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from mcp.server import FastMCP
 
 from mcp_app.config import Configuration
@@ -190,13 +190,15 @@ class FastAPIApp:
         code: str | None = None,
         error: str | None = None,
         error_description: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> Response:
         """Exchange code for token or handle OAuth errors."""
         if error:
-            return {"error": error, "description": error_description or "Unknown OAuth error"}
+            return JSONResponse(
+                {"error": error, "description": error_description or "Unknown OAuth error"}
+            )
 
         if not code:
-            return {"error": "Missing authorization code"}
+            return JSONResponse({"error": "Missing authorization code"})
 
         if (
             not self.config
@@ -206,7 +208,7 @@ class FastAPIApp:
             or not self.config.middleware.jwt.validation
             or not self.config.middleware.jwt.validation.local
         ):
-            return {"error": "Config incomplete"}
+            return JSONResponse({"error": "Config incomplete"})
 
         local_config = self.config.middleware.jwt.validation.local
         token_url = f"{local_config.issuer}oauth/token"
@@ -221,8 +223,81 @@ class FastAPIApp:
             response = await client.post(token_url, data=data, timeout=10.0)
         if response.status_code == HTTP_OK:
             token_data = response.json()
-            return {"access_token": token_data.get("access_token")}
-        return {"error": "Failed to get token", "details": response.text}
+            jwt = token_data.get("access_token")
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JWT Token</title>
+    <style>
+        body {{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }}
+        h1 {{
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #333;
+        }}
+        input {{
+            font-size: 1.2em;
+            padding: 10px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }}
+        p {{
+            font-size: 1em;
+            color: #666;
+            margin-top: 20px;
+        }}
+        #notification {{
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            font-size: 1em;
+        }}
+    </style>
+</head>
+<body>
+    <h1>Tu Token JWT</h1>
+    <input type="password" value="{jwt}" onclick="copyToClipboard(this.value)" readonly>
+    <p>Haz clic en el cuadro de texto para copiar el token al portapapeles</p>
+    <div id="notification">¡Token copiado al portapapeles!</div>
+    <script>
+        function copyToClipboard(text) {{
+            navigator.clipboard.writeText(text).then(function() {{
+                showNotification();
+            }}, function(err) {{
+                console.error('No se pudo copiar el texto: ', err);
+                alert('Error al copiar el token.');
+            }});
+        }}
+        function showNotification() {{
+            const notification = document.getElementById('notification');
+            notification.style.display = 'block';
+            setTimeout(function() {{
+                notification.style.display = 'none';
+            }}, 3000);
+        }}
+    </script>
+</body>
+</html>
+"""
+            return HTMLResponse(content=html_content)
+        return JSONResponse({"error": "Failed to get token", "details": response.text})
 
     async def _health_check(self) -> dict[str, str]:
         """Health check endpoint."""
