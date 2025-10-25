@@ -1,15 +1,12 @@
 """Tests for the main MCP application."""
 
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
-from mcp.server import FastMCP
 
-import mcp_app.main
+from mcp_app.app_config import AppConfig
 from mcp_app.config import (
     AccessLogsConfig,
     Configuration,
@@ -17,16 +14,15 @@ from mcp_app.config import (
     MiddlewareConfig,
     ServerConfig,
 )
+from mcp_app.fastapi_app import FastAPIApp
 from mcp_app.main import (
     get_host_and_port,
-    handlers_manager,
     main,
     main_http,
     main_stdio,
     safe_log_config,
 )
-from mcp_app.middlewares.access_logs import AccessLogsMiddleware
-from mcp_app.tools.router import register_tools
+from mcp_app.mcp_server import MCPServer
 
 HTTP_200_OK = 200
 HTTP_400_BAD_REQUEST = 400
@@ -37,64 +33,13 @@ PORT_DEFAULT = 8080
 @pytest.fixture
 def client() -> TestClient:
     """Test client for the FastAPI app."""
-    # Create a test config without JWT middleware
-    test_config = None
+    # Create test components with None config
+    test_app_config = AppConfig()
+    test_app_config._config = None  # Set to None for testing
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
 
-    # Create fresh app with test config
-
-    test_app = FastAPI(
-        title="MCP-Forge-Python",
-        description="A Python port of the MCP Forge Go project.",
-        redirect_slashes=False,
-    )
-
-    # Add CORS (default)
-    test_app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    # Add access logs if config has it
-    # pragma: no cover
-    if test_config and test_config.middleware and test_config.middleware.access_logs:
-        test_app.add_middleware(  # pragma: no cover
-            AccessLogsMiddleware,
-            excluded_headers=test_config.middleware.access_logs.excluded_headers,
-            redacted_headers=test_config.middleware.access_logs.redacted_headers,
-        )
-
-    # Register tools
-    test_mcp = FastMCP("MCP-Forge-Python")
-    register_tools(test_mcp)
-
-    # Add endpoints
-    @test_app.get("/")
-    async def read_root() -> dict[str, str]:
-        from mcp_app.main import config  # noqa: PLC0415
-
-        server_name = config.server.name if config and config.server else "Unknown"
-        return {"message": f"Hello from {server_name}"}
-
-    @test_app.get("/health")
-    async def health_check() -> dict[str, str]:
-        return {"status": "ok"}
-
-    @test_app.get("/.well-known/oauth-authorization-server")
-    async def oauth_authorization_server() -> dict[str, Any]:
-        if not handlers_manager:  # pragma: no cover
-            return {"error": "Configuration not loaded"}
-        return await handlers_manager.handle_oauth_authorization_server()
-
-    @test_app.get("/.well-known/oauth-protected-resource")
-    async def oauth_protected_resource() -> dict[str, Any]:
-        if not handlers_manager:  # pragma: no cover
-            return {"error": "Configuration not loaded"}
-        return await handlers_manager.handle_oauth_protected_resources()
-
-    return TestClient(test_app)
+    return TestClient(test_fastapi_app.app)
 
 
 def test_health_check(client: TestClient) -> None:
@@ -115,29 +60,27 @@ def test_root_endpoint(client: TestClient) -> None:
 
 def test_oauth_authorization_server_no_config(client: TestClient) -> None:
     """Test OAuth authorization server endpoint when config not loaded."""
-    with patch("tests.test_main.handlers_manager", None):
-        response = client.get("/.well-known/oauth-authorization-server")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"error": "Configuration not loaded"}
+    response = client.get("/.well-known/oauth-authorization-server")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"error": "Configuration not loaded"}
 
 
 def test_oauth_protected_resource_no_config(client: TestClient) -> None:
     """Test OAuth protected resource endpoint when config not loaded."""
-    with patch("tests.test_main.handlers_manager", None):
-        response = client.get("/.well-known/oauth-protected-resource")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"error": "Configuration not loaded"}
+    response = client.get("/.well-known/oauth-protected-resource")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"error": "Configuration not loaded"}
 
 
 @patch("sys.argv", ["main.py", "stdio"])
-@patch("mcp_app.main.mcp")
+@patch("mcp_app.main.mcp_server.mcp")
 def test_main_stdio(mock_mcp: MagicMock) -> None:
     """Test main function with stdio argument."""
     main()
     mock_mcp.run.assert_called_once_with(transport="stdio")
 
 
-@patch("mcp_app.main.mcp")
+@patch("mcp_app.main.mcp_server.mcp")
 def test_main_stdio_function(mock_mcp: MagicMock) -> None:
     """Test main_stdio function."""
     main_stdio()
@@ -167,7 +110,7 @@ def test_main_http_function(mock_uvicorn_run: MagicMock) -> None:
     assert kwargs["port"] == PORT_DEFAULT
 
 
-@patch("mcp_app.main.config", None)
+@patch("mcp_app.main.app_config._config", None)
 def test_get_host_and_port_no_config() -> None:
     """Test get_host_and_port with no config."""
     host, port = get_host_and_port()
@@ -175,7 +118,7 @@ def test_get_host_and_port_no_config() -> None:
     assert port == PORT_DEFAULT
 
 
-@patch("mcp_app.main.logger")
+@patch("mcp_app.app_config.logger")
 def test_safe_log_config(mock_logger: MagicMock) -> None:
     """Test safe_log_config function."""
     # Test with server and middleware config
@@ -195,61 +138,67 @@ def test_safe_log_config(mock_logger: MagicMock) -> None:
     assert ("JWT Middleware: enabled=%s", True) in calls
 
 
-def test_oauth_authorization_server_with_config(client: TestClient) -> None:
+def test_oauth_authorization_server_with_config() -> None:
     """Test OAuth authorization server endpoint when config loaded."""
     mock_manager = MagicMock()
     mock_manager.handle_oauth_authorization_server = AsyncMock(return_value={"test": "data"})
-    with patch("tests.test_main.handlers_manager", mock_manager):
-        response = client.get("/.well-known/oauth-authorization-server")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"test": "data"}
-        mock_manager.handle_oauth_authorization_server.assert_called_once()
+    test_app_config = AppConfig()
+    test_app_config._config = MagicMock()  # Mock config
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    test_fastapi_app.handlers_manager = mock_manager  # Set mock manager
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/.well-known/oauth-authorization-server")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"test": "data"}
+    mock_manager.handle_oauth_authorization_server.assert_called_once()
 
 
-def test_oauth_protected_resource_with_config(client: TestClient) -> None:
+def test_oauth_protected_resource_with_config() -> None:
     """Test OAuth protected resource endpoint when config loaded."""
     mock_manager = MagicMock()
     mock_manager.handle_oauth_protected_resources = AsyncMock(return_value={"test": "data"})
-    with patch("tests.test_main.handlers_manager", mock_manager):
-        response = client.get("/.well-known/oauth-protected-resource")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"test": "data"}
-        mock_manager.handle_oauth_protected_resources.assert_called_once()
+    test_app_config = AppConfig()
+    test_app_config._config = MagicMock()  # Mock config
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    test_fastapi_app.handlers_manager = mock_manager  # Set mock manager
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/.well-known/oauth-protected-resource")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"test": "data"}
+    mock_manager.handle_oauth_protected_resources.assert_called_once()
 
 
 def test_login_no_config() -> None:
     """Test login endpoint when config is None."""
-    original_config = mcp_app.main.config
-    mcp_app.main.config = None
-    try:
-        client = TestClient(mcp_app.main.app)
-        response = client.get("/login")
-        assert response.status_code == HTTP_400_BAD_REQUEST
-        assert response.json() == {"error": "Config incomplete"}
-    finally:
-        mcp_app.main.config = original_config
+    test_app_config = AppConfig()
+    test_app_config._config = None
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/login")
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    assert response.json() == {"error": "Config incomplete"}
 
 
 def test_login_incomplete_config() -> None:
     """Test login endpoint when config is incomplete."""
-    original_config = mcp_app.main.config
     mock_config = MagicMock()
     mock_config.auth = None
     mock_config.middleware = None
-    mcp_app.main.config = mock_config
-    try:
-        client = TestClient(mcp_app.main.app)
-        response = client.get("/login")
-        assert response.status_code == HTTP_400_BAD_REQUEST
-        assert response.json() == {"error": "Config incomplete"}
-    finally:
-        mcp_app.main.config = original_config
+    test_app_config = AppConfig()
+    test_app_config._config = mock_config
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/login")
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    assert response.json() == {"error": "Config incomplete"}
 
 
 def test_login_success() -> None:
     """Test login endpoint with valid config."""
-    original_config = mcp_app.main.config
-
     # Mock valid config
     mock_auth = MagicMock()
     mock_auth.client_id = "test_client_id"
@@ -272,54 +221,50 @@ def test_login_success() -> None:
     mock_config.auth = mock_auth
     mock_config.middleware = mock_middleware_config
 
-    mcp_app.main.config = mock_config
-    try:
-        client = TestClient(mcp_app.main.app)
-        response = client.get("/login", follow_redirects=False)
-        assert response.status_code == HTTP_307_TEMPORARY_REDIRECT  # Redirect
-        location = response.headers.get("location", "")
-        assert "https://test.auth0.com/authorize?" in location
-        assert "client_id=test_client_id" in location
-        assert "redirect_uri=http://localhost/callback" in location
-        assert "audience=test_audience" in location
-    finally:
-        mcp_app.main.config = original_config
+    test_app_config = AppConfig()
+    test_app_config._config = mock_config
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/login", follow_redirects=False)
+    assert response.status_code == HTTP_307_TEMPORARY_REDIRECT  # Redirect
+    location = response.headers.get("location", "")
+    assert "https://test.auth0.com/authorize?" in location
+    assert "client_id=test_client_id" in location
+    assert "redirect_uri=http://localhost/callback" in location
+    assert "audience=test_audience" in location
 
 
 def test_callback_no_config() -> None:
     """Test callback endpoint when config is None."""
-    original_config = mcp_app.main.config
-    mcp_app.main.config = None
-    try:
-        client = TestClient(mcp_app.main.app)
-        response = client.get("/callback?code=test_code")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"error": "Config incomplete"}
-    finally:
-        mcp_app.main.config = original_config
+    test_app_config = AppConfig()
+    test_app_config._config = None
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/callback?code=test_code")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"error": "Config incomplete"}
 
 
 def test_callback_incomplete_config() -> None:
     """Test callback endpoint when config is incomplete."""
-    original_config = mcp_app.main.config
     mock_config = MagicMock()
     mock_config.auth = None
     mock_config.middleware = None
-    mcp_app.main.config = mock_config
-    try:
-        client = TestClient(mcp_app.main.app)
-        response = client.get("/callback?code=test_code")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"error": "Config incomplete"}
-    finally:
-        mcp_app.main.config = original_config
+    test_app_config = AppConfig()
+    test_app_config._config = mock_config
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/callback?code=test_code")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"error": "Config incomplete"}
 
 
 @patch("httpx.AsyncClient")
 def test_callback_success(mock_client_class: MagicMock) -> None:
     """Test callback endpoint with successful token exchange."""
-    original_config = mcp_app.main.config
-
     # Mock valid config
     mock_auth = MagicMock()
     mock_auth.client_id = "test_client_id"
@@ -342,7 +287,10 @@ def test_callback_success(mock_client_class: MagicMock) -> None:
     mock_config.auth = mock_auth
     mock_config.middleware = mock_middleware_config
 
-    mcp_app.main.config = mock_config
+    test_app_config = AppConfig()
+    test_app_config._config = mock_config
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
 
     # Mock httpx response
     mock_response = MagicMock()
@@ -353,20 +301,15 @@ def test_callback_success(mock_client_class: MagicMock) -> None:
     mock_client_instance.post = AsyncMock(return_value=mock_response)
     mock_client_class.return_value.__aenter__.return_value = mock_client_instance
 
-    try:
-        client = TestClient(mcp_app.main.app)
-        response = client.get("/callback?code=test_code")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"access_token": "test_token"}
-    finally:
-        mcp_app.main.config = original_config
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/callback?code=test_code")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"access_token": "test_token"}
 
 
 @patch("httpx.AsyncClient")
 def test_callback_token_exchange_failure(mock_client_class: MagicMock) -> None:
     """Test callback endpoint when token exchange fails."""
-    original_config = mcp_app.main.config
-
     # Mock valid config
     mock_auth = MagicMock()
     mock_auth.client_id = "test_client_id"
@@ -389,7 +332,10 @@ def test_callback_token_exchange_failure(mock_client_class: MagicMock) -> None:
     mock_config.auth = mock_auth
     mock_config.middleware = mock_middleware_config
 
-    mcp_app.main.config = mock_config
+    test_app_config = AppConfig()
+    test_app_config._config = mock_config
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
 
     # Mock httpx response with failure
     mock_response = MagicMock()
@@ -400,10 +346,7 @@ def test_callback_token_exchange_failure(mock_client_class: MagicMock) -> None:
     mock_client_instance.post = AsyncMock(return_value=mock_response)
     mock_client_class.return_value.__aenter__.return_value = mock_client_instance
 
-    try:
-        client = TestClient(mcp_app.main.app)
-        response = client.get("/callback?code=test_code")
-        assert response.status_code == HTTP_200_OK
-        assert response.json() == {"error": "Failed to get token", "details": "Invalid code"}
-    finally:
-        mcp_app.main.config = original_config
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/callback?code=test_code")
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"error": "Failed to get token", "details": "Invalid code"}
