@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42f95aea65d716c01456d600394baa7e1ffc27de">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=420a8a1b150ef3d06ef80e876518fe9e9a0c059f">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -195,49 +195,43 @@ config.toml          # Configuration example
 
 <ul>
   <li><strong>Default</strong>: <code class="language-plaintext highlighter-rouge">jwt_exposed_claims = "all"</code> - Exposes all claims in the JWT payload.</li>
-  <li><strong>Secure Option</strong>: <code class="language-plaintext highlighter-rouge">jwt_exposed_claims = ["user_id", "roles", "permissions"]</code> - Only exposes specific claims.</li>
+  <li><strong>Secure Option</strong>: <code class="language-plaintext highlighter-rouge">jwt_exposed_claims = ["user_id", "roles"]</code> - Only exposes specific claims.</li>
 </ul>
 
-<p><strong>Important</strong>: Review your JWT structure and set <code class="language-plaintext highlighter-rouge">jwt_exposed_claims</code> to only the claims your tools need. Avoid exposing sensitive data like emails, personal info, or internal IDs unless necessary. Update this in <code class="language-plaintext highlighter-rouge">config.toml</code> and test that tools receive only expected data.</p>
+<p><strong>Important</strong>: The <code class="language-plaintext highlighter-rouge">permissions</code> claim is always included automatically for authorization purposes, regardless of the <code class="language-plaintext highlighter-rouge">jwt_exposed_claims</code> configuration. Review your JWT structure and set <code class="language-plaintext highlighter-rouge">jwt_exposed_claims</code> to only the claims your tools need. Avoid exposing sensitive data like emails, personal info, or internal IDs unless necessary. Update this in <code class="language-plaintext highlighter-rouge">config.toml</code> and test that tools receive only expected data.</p>
 
 <p>Example in <code class="language-plaintext highlighter-rouge">config.toml</code>:</p>
 <div class="language-toml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="py">jwt_exposed_claims</span> <span class="p">=</span> <span class="p">[</span><span class="s">"user_id"</span><span class="p">,</span> <span class="s">"roles"</span><span class="p">]</span>
 </code></pre></div></div>
+<p>Note: <code class="language-plaintext highlighter-rouge">permissions</code> is always included automatically for authorization.</p>
 
-<h3 id="roles-and-scopes-for-tool-authorization">Roles and Scopes for Tool Authorization</h3>
+<h3 id="permissions-for-tool-authorization">Permissions for Tool Authorization</h3>
 
-<p>This project implements a basic role-based access control (RBAC) system using OAuth scopes to restrict tool execution. Scopes are issued by the identity provider (e.g., Keycloak, Auth0, or other OAuth providers) and validated in tools at runtime.</p>
+<p>This project implements a basic permission-based access control system using OAuth permissions to restrict tool execution. Permissions are issued by the identity provider (e.g., Keycloak, Auth0, or other OAuth providers) and validated in tools at runtime.</p>
 
-<h4 id="defining-your-own-scopes-and-roles">Defining Your Own Scopes and Roles</h4>
+<h4 id="defining-your-own-permissions">Defining Your Own Permissions</h4>
 
-<p>You can define custom scopes and roles based on your application’s needs. Scopes control access to specific tools or features, while roles group permissions.</p>
+<p>You can define custom permissions based on your application’s needs. Permissions control access to specific tools or features.</p>
 
-<p><strong>Example Scopes</strong> (define in your OAuth provider’s API/client configuration):</p>
+<p><strong>Example Permissions</strong> (define in your OAuth provider’s API/client configuration):</p>
 <ul>
   <li><code class="language-plaintext highlighter-rouge">tool:read</code>: Access to read-only tools.</li>
   <li><code class="language-plaintext highlighter-rouge">tool:write</code>: Access to tools that modify data.</li>
   <li><code class="language-plaintext highlighter-rouge">tool:admin</code>: Administrative access to sensitive tools.</li>
 </ul>
 
-<p><strong>Example Roles</strong> (define in your OAuth provider’s user/role management):</p>
-<ul>
-  <li><code class="language-plaintext highlighter-rouge">user</code>: Basic user role; grants <code class="language-plaintext highlighter-rouge">tool:read</code> scope.</li>
-  <li><code class="language-plaintext highlighter-rouge">editor</code>: Editor role; grants <code class="language-plaintext highlighter-rouge">tool:read</code> and <code class="language-plaintext highlighter-rouge">tool:write</code> scopes.</li>
-  <li><code class="language-plaintext highlighter-rouge">admin</code>: Admin role; grants all scopes.</li>
-</ul>
+<p>Permissions are included in JWT claims as a <code class="language-plaintext highlighter-rouge">permissions</code> array via your OAuth provider’s rules/actions/policies. Configure your provider to include the appropriate permissions in tokens based on user roles.</p>
 
-<p>Scopes and roles are included in JWT claims (<code class="language-plaintext highlighter-rouge">scope</code> and <code class="language-plaintext highlighter-rouge">roles</code>) via your OAuth provider’s rules/actions/policies. Configure your provider to map roles to scopes and include them in tokens.</p>
+<h4 id="checking-permissions-in-tools">Checking Permissions in Tools</h4>
 
-<h4 id="checking-scopes-in-tools">Checking Scopes in Tools</h4>
+<p>To restrict a tool based on permissions, add authorization checks inside the tool function. Use <code class="language-plaintext highlighter-rouge">get_jwt_payload()</code> from <code class="language-plaintext highlighter-rouge">mcp_app.context</code> to access claims. Note that <code class="language-plaintext highlighter-rouge">permissions</code> is always included in the filtered payload for authorization purposes.</p>
 
-<p>To restrict a tool based on scopes, add authorization checks inside the tool function. Use <code class="language-plaintext highlighter-rouge">get_jwt_payload()</code> from <code class="language-plaintext highlighter-rouge">mcp_app.context</code> to access claims.</p>
-
-<p>Example for a tool requiring <code class="language-plaintext highlighter-rouge">tool:user</code> scope:</p>
+<p>Example for a tool requiring <code class="language-plaintext highlighter-rouge">tool:user</code> permission:</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mcp_app.context</span> <span class="kn">import</span> <span class="n">get_jwt_payload</span>
 
 <span class="k">def</span> <span class="nf">my_tool</span><span class="p">(</span><span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="s">"""My tool description. Requires tool:user scope.
+    <span class="s">"""My tool description. Requires tool:user permission.
 
     Args:
         param: Parameter description.
@@ -246,26 +240,25 @@ config.toml          # Configuration example
         Result description.
 
     Raises:
-        PermissionError: If user lacks required scope.
+        PermissionError: If user lacks required permission.
     """</span>
     <span class="n">payload</span> <span class="o">=</span> <span class="n">get_jwt_payload</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">payload</span><span class="p">:</span>  <span class="c1"># Only check in HTTP mode (with JWT)
-</span>        <span class="n">scope</span> <span class="o">=</span> <span class="n">payload</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"scope"</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>
-        <span class="n">scopes</span> <span class="o">=</span> <span class="n">scope</span><span class="p">.</span><span class="n">split</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">scope</span> <span class="ow">or</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="s">"tool:user"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">scopes</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PermissionError</span><span class="p">(</span><span class="s">"Insufficient permissions: tool:user scope required"</span><span class="p">)</span>
+</span>        <span class="n">permissions</span> <span class="o">=</span> <span class="n">payload</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"permissions"</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="s">"tool:user"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">permissions</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionError</span><span class="p">(</span><span class="s">"Insufficient permissions: tool:user permission required"</span><span class="p">)</span>
 
     <span class="c1"># Tool logic here
 </span>    <span class="k">return</span> <span class="sa">f</span><span class="s">"Processed: </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s">"</span>
 </code></pre></div></div>
 
 <ul>
-  <li><strong>In HTTP mode</strong>: Validates scopes from JWT; raises <code class="language-plaintext highlighter-rouge">PermissionError</code> if unauthorized.</li>
+  <li><strong>In HTTP mode</strong>: Validates permissions from JWT; raises <code class="language-plaintext highlighter-rouge">PermissionError</code> if unauthorized.</li>
   <li><strong>In stdio mode</strong>: Allows execution without checks (for development).</li>
-  <li><strong>Always include scope checks</strong> for sensitive tools to prevent unauthorized access.</li>
+  <li><strong>Always include permission checks</strong> for sensitive tools to prevent unauthorized access.</li>
 </ul>
 
-<p>Configure your OAuth provider to issue tokens with the appropriate scopes based on user roles.</p>
+<p>Configure your OAuth provider to issue tokens with the appropriate permissions based on user roles.</p>
 
 <h2 id="configuration-placeholders">Configuration Placeholders</h2>
 

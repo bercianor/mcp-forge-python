@@ -120,46 +120,42 @@ For external validation (e.g., via a proxy), set `strategy = "external"` and con
 As a template, this project allows configuring which JWT claims are exposed to MCP tools via the `context` module. This is crucial for security, as JWT payloads may contain sensitive information (PII) that should not be accessible to tools.
 
 - **Default**: `jwt_exposed_claims = "all"` - Exposes all claims in the JWT payload.
-- **Secure Option**: `jwt_exposed_claims = ["user_id", "roles", "permissions"]` - Only exposes specific claims.
+- **Secure Option**: `jwt_exposed_claims = ["user_id", "roles"]` - Only exposes specific claims.
 
-**Important**: Review your JWT structure and set `jwt_exposed_claims` to only the claims your tools need. Avoid exposing sensitive data like emails, personal info, or internal IDs unless necessary. Update this in `config.toml` and test that tools receive only expected data.
+**Important**: The `permissions` claim is always included automatically for authorization purposes, regardless of the `jwt_exposed_claims` configuration. Review your JWT structure and set `jwt_exposed_claims` to only the claims your tools need. Avoid exposing sensitive data like emails, personal info, or internal IDs unless necessary. Update this in `config.toml` and test that tools receive only expected data.
 
 Example in `config.toml`:
 ```toml
 jwt_exposed_claims = ["user_id", "roles"]
 ```
+Note: `permissions` is always included automatically for authorization.
 
-### Roles and Scopes for Tool Authorization
+### Permissions for Tool Authorization
 
-This project implements a basic role-based access control (RBAC) system using OAuth scopes to restrict tool execution. Scopes are issued by the identity provider (e.g., Keycloak, Auth0, or other OAuth providers) and validated in tools at runtime.
+This project implements a basic permission-based access control system using OAuth permissions to restrict tool execution. Permissions are issued by the identity provider (e.g., Keycloak, Auth0, or other OAuth providers) and validated in tools at runtime.
 
-#### Defining Your Own Scopes and Roles
+#### Defining Your Own Permissions
 
-You can define custom scopes and roles based on your application's needs. Scopes control access to specific tools or features, while roles group permissions.
+You can define custom permissions based on your application's needs. Permissions control access to specific tools or features.
 
-**Example Scopes** (define in your OAuth provider's API/client configuration):
+**Example Permissions** (define in your OAuth provider's API/client configuration):
 - `tool:read`: Access to read-only tools.
 - `tool:write`: Access to tools that modify data.
 - `tool:admin`: Administrative access to sensitive tools.
 
-**Example Roles** (define in your OAuth provider's user/role management):
-- `user`: Basic user role; grants `tool:read` scope.
-- `editor`: Editor role; grants `tool:read` and `tool:write` scopes.
-- `admin`: Admin role; grants all scopes.
+Permissions are included in JWT claims as a `permissions` array via your OAuth provider's rules/actions/policies. Configure your provider to include the appropriate permissions in tokens based on user roles.
 
-Scopes and roles are included in JWT claims (`scope` and `roles`) via your OAuth provider's rules/actions/policies. Configure your provider to map roles to scopes and include them in tokens.
+#### Checking Permissions in Tools
 
-#### Checking Scopes in Tools
+To restrict a tool based on permissions, add authorization checks inside the tool function. Use `get_jwt_payload()` from `mcp_app.context` to access claims. Note that `permissions` is always included in the filtered payload for authorization purposes.
 
-To restrict a tool based on scopes, add authorization checks inside the tool function. Use `get_jwt_payload()` from `mcp_app.context` to access claims.
-
-Example for a tool requiring `tool:user` scope:
+Example for a tool requiring `tool:user` permission:
 
 ```python
 from mcp_app.context import get_jwt_payload
 
 def my_tool(param: str) -> str:
-    """My tool description. Requires tool:user scope.
+    """My tool description. Requires tool:user permission.
 
     Args:
         param: Parameter description.
@@ -168,24 +164,23 @@ def my_tool(param: str) -> str:
         Result description.
 
     Raises:
-        PermissionError: If user lacks required scope.
+        PermissionError: If user lacks required permission.
     """
     payload = get_jwt_payload()
     if payload:  # Only check in HTTP mode (with JWT)
-        scope = payload.get("scope", "")
-        scopes = scope.split() if isinstance(scope, str) else scope or []
-        if "tool:user" not in scopes:
-            raise PermissionError("Insufficient permissions: tool:user scope required")
+        permissions = payload.get("permissions", [])
+        if "tool:user" not in permissions:
+            raise PermissionError("Insufficient permissions: tool:user permission required")
 
     # Tool logic here
     return f"Processed: {param}"
 ```
 
-- **In HTTP mode**: Validates scopes from JWT; raises `PermissionError` if unauthorized.
+- **In HTTP mode**: Validates permissions from JWT; raises `PermissionError` if unauthorized.
 - **In stdio mode**: Allows execution without checks (for development).
-- **Always include scope checks** for sensitive tools to prevent unauthorized access.
+- **Always include permission checks** for sensitive tools to prevent unauthorized access.
 
-Configure your OAuth provider to issue tokens with the appropriate scopes based on user roles.
+Configure your OAuth provider to issue tokens with the appropriate permissions based on user roles.
 
 ## Configuration Placeholders
 
