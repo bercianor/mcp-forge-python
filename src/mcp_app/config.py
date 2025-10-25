@@ -21,6 +21,7 @@ except ImportError:  # pragma: no cover
     import tomli as tomllib  # pragma: no cover
 
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 # --- Pydantic Models for Configuration ---
 
@@ -128,6 +129,16 @@ class OAuthProtectedResourceConfig(BaseModel):
     dpop_bound_access_tokens_required: bool = False
 
 
+class AuthConfig(BaseSettings):
+    """Auth configuration for OAuth flows."""
+
+    model_config = {"env_prefix": "MCP_"}
+
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+
+
 class Configuration(BaseModel):
     """Top-level configuration model for the application."""
 
@@ -137,6 +148,7 @@ class Configuration(BaseModel):
     oauth_protected_resource: OAuthProtectedResourceConfig | None = None
     jwt_exposed_claims: str | list[str] = "all"
     oauth_whitelist_domains: list[str] = []
+    auth: AuthConfig | None = None
 
 
 # --- Configuration Loading Function ---

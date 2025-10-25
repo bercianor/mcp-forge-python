@@ -105,6 +105,10 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
+        # Skip JWT validation for OAuth endpoints
+        if request.url.path in ["/login", "/callback", "/error"]:
+            return await call_next(request)
+
         if self.strategy == "local":
             try:
                 await self._validate_local(request)

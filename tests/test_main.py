@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 from mcp.server import FastMCP
 
+import mcp_app.main
 from mcp_app.config import (
     AccessLogsConfig,
     Configuration,
@@ -25,6 +26,8 @@ from mcp_app.middlewares.access_logs import AccessLogsMiddleware
 from mcp_app.tools.router import register_tools
 
 HTTP_200_OK = 200
+HTTP_400_BAD_REQUEST = 400
+HTTP_307_TEMPORARY_REDIRECT = 307
 PORT_DEFAULT = 8080
 
 
@@ -183,3 +186,195 @@ def test_oauth_protected_resource_with_config(client: TestClient) -> None:
         assert response.status_code == HTTP_200_OK
         assert response.json() == {"test": "data"}
         mock_manager.handle_oauth_protected_resources.assert_called_once()
+
+
+def test_login_no_config() -> None:
+    """Test login endpoint when config is None."""
+    original_config = mcp_app.main.config
+    mcp_app.main.config = None
+    try:
+        client = TestClient(mcp_app.main.app)
+        response = client.get("/login")
+        assert response.status_code == HTTP_400_BAD_REQUEST
+        assert response.json() == {"error": "Config incomplete"}
+    finally:
+        mcp_app.main.config = original_config
+
+
+def test_login_incomplete_config() -> None:
+    """Test login endpoint when config is incomplete."""
+    original_config = mcp_app.main.config
+    mock_config = MagicMock()
+    mock_config.auth = None
+    mock_config.middleware = None
+    mcp_app.main.config = mock_config
+    try:
+        client = TestClient(mcp_app.main.app)
+        response = client.get("/login")
+        assert response.status_code == HTTP_400_BAD_REQUEST
+        assert response.json() == {"error": "Config incomplete"}
+    finally:
+        mcp_app.main.config = original_config
+
+
+def test_login_success() -> None:
+    """Test login endpoint with valid config."""
+    original_config = mcp_app.main.config
+
+    # Mock valid config
+    mock_auth = MagicMock()
+    mock_auth.client_id = "test_client_id"
+    mock_auth.redirect_uri = "http://localhost/callback"
+
+    mock_local = MagicMock()
+    mock_local.issuer = "https://test.auth0.com/"
+    mock_local.audience = "test_audience"
+
+    mock_validation = MagicMock()
+    mock_validation.local = mock_local
+
+    mock_jwt = MagicMock()
+    mock_jwt.validation = mock_validation
+
+    mock_middleware_config = MagicMock()
+    mock_middleware_config.jwt = mock_jwt
+
+    mock_config = MagicMock()
+    mock_config.auth = mock_auth
+    mock_config.middleware = mock_middleware_config
+
+    mcp_app.main.config = mock_config
+    try:
+        client = TestClient(mcp_app.main.app)
+        response = client.get("/login", follow_redirects=False)
+        assert response.status_code == HTTP_307_TEMPORARY_REDIRECT  # Redirect
+        location = response.headers.get("location", "")
+        assert "https://test.auth0.com/authorize?" in location
+        assert "client_id=test_client_id" in location
+        assert "redirect_uri=http://localhost/callback" in location
+        assert "audience=test_audience" in location
+    finally:
+        mcp_app.main.config = original_config
+
+
+def test_callback_no_config() -> None:
+    """Test callback endpoint when config is None."""
+    original_config = mcp_app.main.config
+    mcp_app.main.config = None
+    try:
+        client = TestClient(mcp_app.main.app)
+        response = client.get("/callback?code=test_code")
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == {"error": "Config incomplete"}
+    finally:
+        mcp_app.main.config = original_config
+
+
+def test_callback_incomplete_config() -> None:
+    """Test callback endpoint when config is incomplete."""
+    original_config = mcp_app.main.config
+    mock_config = MagicMock()
+    mock_config.auth = None
+    mock_config.middleware = None
+    mcp_app.main.config = mock_config
+    try:
+        client = TestClient(mcp_app.main.app)
+        response = client.get("/callback?code=test_code")
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == {"error": "Config incomplete"}
+    finally:
+        mcp_app.main.config = original_config
+
+
+@patch("httpx.AsyncClient")
+def test_callback_success(mock_client_class: MagicMock) -> None:
+    """Test callback endpoint with successful token exchange."""
+    original_config = mcp_app.main.config
+
+    # Mock valid config
+    mock_auth = MagicMock()
+    mock_auth.client_id = "test_client_id"
+    mock_auth.client_secret = "test_secret"  # noqa: S105
+    mock_auth.redirect_uri = "http://localhost/callback"
+
+    mock_local = MagicMock()
+    mock_local.issuer = "https://test.auth0.com/"
+
+    mock_validation = MagicMock()
+    mock_validation.local = mock_local
+
+    mock_jwt_config = MagicMock()
+    mock_jwt_config.validation = mock_validation
+
+    mock_middleware_config = MagicMock()
+    mock_middleware_config.jwt = mock_jwt_config
+
+    mock_config = MagicMock()
+    mock_config.auth = mock_auth
+    mock_config.middleware = mock_middleware_config
+
+    mcp_app.main.config = mock_config
+
+    # Mock httpx response
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"access_token": "test_token"}
+
+    mock_client_instance = MagicMock()
+    mock_client_instance.post = AsyncMock(return_value=mock_response)
+    mock_client_class.return_value.__aenter__.return_value = mock_client_instance
+
+    try:
+        client = TestClient(mcp_app.main.app)
+        response = client.get("/callback?code=test_code")
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == {"access_token": "test_token"}
+    finally:
+        mcp_app.main.config = original_config
+
+
+@patch("httpx.AsyncClient")
+def test_callback_token_exchange_failure(mock_client_class: MagicMock) -> None:
+    """Test callback endpoint when token exchange fails."""
+    original_config = mcp_app.main.config
+
+    # Mock valid config
+    mock_auth = MagicMock()
+    mock_auth.client_id = "test_client_id"
+    mock_auth.client_secret = "test_secret"  # noqa: S105
+    mock_auth.redirect_uri = "http://localhost/callback"
+
+    mock_local = MagicMock()
+    mock_local.issuer = "https://test.auth0.com/"
+
+    mock_validation = MagicMock()
+    mock_validation.local = mock_local
+
+    mock_jwt_config = MagicMock()
+    mock_jwt_config.validation = mock_validation
+
+    mock_middleware_config = MagicMock()
+    mock_middleware_config.jwt = mock_jwt_config
+
+    mock_config = MagicMock()
+    mock_config.auth = mock_auth
+    mock_config.middleware = mock_middleware_config
+
+    mcp_app.main.config = mock_config
+
+    # Mock httpx response with failure
+    mock_response = MagicMock()
+    mock_response.status_code = 400
+    mock_response.text = "Invalid code"
+
+    mock_client_instance = MagicMock()
+    mock_client_instance.post = AsyncMock(return_value=mock_response)
+    mock_client_class.return_value.__aenter__.return_value = mock_client_instance
+
+    try:
+        client = TestClient(mcp_app.main.app)
+        response = client.get("/callback?code=test_code")
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == {"error": "Failed to get token", "details": "Invalid code"}
+    finally:
+        mcp_app.main.config = original_config

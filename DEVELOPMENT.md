@@ -143,8 +143,9 @@ Before using this template, you must replace all placeholders with your actual v
    - Update all example URLs (`your-keycloak.example.com`, `your-mcp-domain.example.com`) according to your infrastructure
 
 3. **`config.toml`**:
-   - Configure Keycloak URLs, JWKS, etc. for your specific environment
-   - Change `your-keycloak.example.com` and `yourdomain.com` to your real values
+    - Configure Keycloak URLs, JWKS, etc. for your specific environment
+    - Change `your-keycloak.example.com` and `yourdomain.com` to your real values
+    - Set environment variables for secrets: `MCP_CLIENT_ID` and `MCP_CLIENT_SECRET`
 
 4. **README files**:
    - Replace `bercianor/mcp-forge-python` in badges with your actual GitHub username/repo
@@ -168,6 +169,8 @@ Before using this template, you must replace all placeholders with your actual v
 - `your-kv/applications/mcp-forge-python/credentials` (chart/values.yaml - Vault path)
 - `@YOUR_USERNAME` (.github/CODEOWNERS)
 - `YOUR_USERNAME` (.github/dependabot.yml)
+- `YOUR_CLIENT_ID` (config.toml)
+- `YOUR_CLIENT_SECRET` (config.toml)
 
 ### Example URLs to Replace
 
