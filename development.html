@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=3f2420f5ab71f89fb5e751ef5145f7996fb9bf9b">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42e00248506f1a8536e0fb3683cace81e5627b32">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -226,6 +226,7 @@ config.toml          # Configuration example
     <ul>
       <li>Configure Keycloak URLs, JWKS, etc. for your specific environment</li>
       <li>Change <code class="language-plaintext highlighter-rouge">your-keycloak.example.com</code> and <code class="language-plaintext highlighter-rouge">yourdomain.com</code> to your real values</li>
+      <li>Set environment variables for secrets: <code class="language-plaintext highlighter-rouge">MCP_CLIENT_ID</code> and <code class="language-plaintext highlighter-rouge">MCP_CLIENT_SECRET</code></li>
     </ul>
   </li>
   <li><strong>README files</strong>:
@@ -259,6 +260,8 @@ config.toml          # Configuration example
   <li><code class="language-plaintext highlighter-rouge">your-kv/applications/mcp-forge-python/credentials</code> (chart/values.yaml - Vault path)</li>
   <li><code class="language-plaintext highlighter-rouge">@YOUR_USERNAME</code> (.github/CODEOWNERS)</li>
   <li><code class="language-plaintext highlighter-rouge">YOUR_USERNAME</code> (.github/dependabot.yml)</li>
+  <li><code class="language-plaintext highlighter-rouge">YOUR_CLIENT_ID</code> (config.toml)</li>
+  <li><code class="language-plaintext highlighter-rouge">YOUR_CLIENT_SECRET</code> (config.toml)</li>
 </ul>
 
 <h3 id="example-urls-to-replace">Example URLs to Replace</h3>
