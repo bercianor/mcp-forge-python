@@ -350,3 +350,29 @@ def test_callback_token_exchange_failure(mock_client_class: MagicMock) -> None:
     response = client.get("/callback?code=test_code")
     assert response.status_code == HTTP_200_OK
     assert response.json() == {"error": "Failed to get token", "details": "Invalid code"}
+
+
+def test_callback_oauth_error() -> None:
+    """Test callback endpoint when OAuth returns error."""
+    test_app_config = AppConfig()
+    test_app_config._config = None  # No config needed for error handling
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    client = TestClient(test_fastapi_app.app)
+    response = client.get(
+        "/callback?error=access_denied&error_description=Scope%20claim%20cannot%20be%20set"
+    )
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"error": "access_denied", "description": "Scope claim cannot be set"}
+
+
+def test_callback_missing_code() -> None:
+    """Test callback endpoint when code is missing."""
+    test_app_config = AppConfig()
+    test_app_config._config = None  # No config needed for error handling
+    test_mcp_server = MCPServer()
+    test_fastapi_app = FastAPIApp(test_app_config.config, test_mcp_server.mcp)
+    client = TestClient(test_fastapi_app.app)
+    response = client.get("/callback")  # No params
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {"error": "Missing authorization code"}

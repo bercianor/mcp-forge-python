@@ -140,7 +140,7 @@ class FastAPIApp:
         app.get("/.well-known/oauth-protected-resource")(self._oauth_protected_resource)
         app.get("/")(self._read_root)
         app.get("/login")(self._login)
-        app.get("/callback")(self._callback)
+        app.get("/callback", response_model=None)(self._callback)
         app.get("/health")(self._health_check)
 
     async def _oauth_authorization_server(self) -> dict[str, Any]:
@@ -184,8 +184,19 @@ class FastAPIApp:
         )
         return RedirectResponse(auth_url)
 
-    async def _callback(self, code: str) -> dict[str, Any]:
-        """Exchange code for token."""
+    async def _callback(
+        self,
+        code: str | None = None,
+        error: str | None = None,
+        error_description: str | None = None,
+    ) -> dict[str, Any]:
+        """Exchange code for token or handle OAuth errors."""
+        if error:
+            return {"error": error, "description": error_description or "Unknown OAuth error"}
+
+        if not code:
+            return {"error": "Missing authorization code"}
+
         if (
             not self.config
             or not self.config.auth
@@ -195,6 +206,7 @@ class FastAPIApp:
             or not self.config.middleware.jwt.validation.local
         ):
             return {"error": "Config incomplete"}
+
         local_config = self.config.middleware.jwt.validation.local
         token_url = f"{local_config.issuer}oauth/token"
         data = {

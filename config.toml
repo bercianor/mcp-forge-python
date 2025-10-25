@@ -8,6 +8,7 @@ type = "http"
 
 [server.transport.http]
 host = "0.0.0.0"
+port = 8080
 
 # Middleware Configuration
 [middleware.access_logs]
