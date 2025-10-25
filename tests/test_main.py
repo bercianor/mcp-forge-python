@@ -114,7 +114,7 @@ def test_main_http_function(mock_uvicorn_run: MagicMock) -> None:
 def test_get_host_and_port_no_config() -> None:
     """Test get_host_and_port with no config."""
     host, port = get_host_and_port()
-    assert host == "127.0.0.1"
+    assert host == "0.0.0.0"  # noqa: S104
     assert port == PORT_DEFAULT
 
 
