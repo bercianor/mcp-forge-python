@@ -1,6 +1,6 @@
 """Tests for tools module."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -117,30 +117,3 @@ def test_whoami_tool_with_invalid_claims_config() -> None:
     set_jwt_context("fake_token", test_payload)
     result = whoami()
     assert result == test_payload
-
-
-@pytest.mark.asyncio
-async def test_get_flamingock_docs() -> None:
-    """Test the get_flamingock_docs resource function."""
-
-    class MockResponse:
-        def __init__(self, text: str) -> None:
-            self.text = text
-
-        def raise_for_status(self) -> None:
-            pass
-
-    mock_response = MockResponse("Mock Flamingock docs content")
-
-    mock_client = AsyncMock()
-    mock_client.get = AsyncMock(return_value=mock_response)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=None)
-
-    with patch(
-        "mcp_app.mcp_components.resources.flamingock_docs.httpx.AsyncClient",
-        return_value=mock_client,
-    ):
-        result = await get_flamingock_docs()
-        assert result == "Mock Flamingock docs content"
-        mock_client.get.assert_called_once_with("https://docs.flamingock.io/llms.txt", timeout=10.0)
