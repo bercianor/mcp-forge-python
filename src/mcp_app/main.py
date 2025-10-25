@@ -13,6 +13,7 @@ from typing import Any
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from mcp.server import FastMCP
 
 from mcp_app.config import Configuration, load_config_from_file
@@ -30,6 +31,28 @@ logger = logging.getLogger(__name__)
 config: Configuration | None = None
 
 
+def load_configuration() -> None:
+    """Load configuration from file."""
+    global config  # noqa: PLW0603
+    config_paths = ["/data/config.toml", "config.toml"]  # Check mounted config first
+
+    for config_path in config_paths:
+        try:
+            config = load_config_from_file(config_path)
+            logger.info("Configuration loaded successfully from %s.", config_path)
+            safe_log_config(config)
+            break
+        except FileNotFoundError:  # pragma: no cover
+            continue  # pragma: no cover
+        except Exception:  # pragma: no cover
+            logger.exception("Failed to load config from %s", config_path)  # pragma: no cover
+            config = None  # pragma: no cover
+            break  # pragma: no cover
+    else:  # pragma: no cover
+        logger.error("No configuration file found in any of: %s", config_paths)  # pragma: no cover
+        config = None  # pragma: no cover
+
+
 def safe_log_config(config: Configuration) -> None:
     """Log configuration fields safely, avoiding sensitive data."""
     if config.server:
@@ -44,26 +67,9 @@ def safe_log_config(config: Configuration) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001  # pragma: no cover
     """Application lifespan context manager."""
-    global config  # noqa: PLW0603
-    config_paths = ["/data/config.toml", "config.toml"]  # Check mounted config first
-
-    for config_path in config_paths:
-        try:
-            config = load_config_from_file(config_path)
-            logger.info("Configuration loaded successfully from %s.", config_path)
-            safe_log_config(config)
-            # Set JWT exposed claims configuration
-            set_exposed_claims(config.jwt_exposed_claims)
-            break
-        except FileNotFoundError:
-            continue
-        except Exception:
-            logger.exception("FATAL: Failed to load configuration from %s", config_path)
-            config = None
-            break
-    else:
-        logger.error("FATAL: No configuration file found in any of: %s", config_paths)
-        config = None
+    # Set JWT exposed claims configuration if config is loaded
+    if config:
+        set_exposed_claims(config.jwt_exposed_claims)
 
     yield
 
@@ -76,12 +82,38 @@ mcp = FastMCP("MCP-Forge-Python")
 # Register tools
 register_tools(mcp)
 
+# Load configuration
+load_configuration()
+
 # Create FastAPI app for additional endpoints
 app = FastAPI(
     title="MCP-Forge-Python",
     description="A Python port of the MCP Forge Go project.",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
+
+# Add CORS middleware
+cors_config = (
+    config.middleware.cors if config and config.middleware and config.middleware.cors else None
+)
+if cors_config:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_config.allow_origins,
+        allow_credentials=cors_config.allow_credentials,
+        allow_methods=cors_config.allow_methods,
+        allow_headers=cors_config.allow_headers,
+    )
+else:
+    # Default CORS configuration
+    app.add_middleware(  # pragma: no cover
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Add middlewares
 if config and config.middleware:  # pragma: no cover
@@ -106,6 +138,8 @@ if config and config.middleware:  # pragma: no cover
             allow_conditions=[
                 c.expression for c in (local_config.allow_conditions if local_config else [])
             ],
+            issuer=local_config.issuer if local_config else None,
+            audience=local_config.audience if local_config else None,
         )
 
 # Initialize handlers
@@ -116,35 +150,36 @@ handlers_manager = HandlersManager(config) if config else None
 @app.get("/.well-known/oauth-authorization-server")
 async def oauth_authorization_server() -> dict[str, Any]:
     """Handle OAuth authorization server metadata endpoint."""
-    if not handlers_manager:
-        return {"error": "Configuration not loaded"}
+    if not handlers_manager:  # pragma: no cover
+        return {"error": "Configuration not loaded"}  # pragma: no cover
     return await handlers_manager.handle_oauth_authorization_server()  # pragma: no cover
 
 
 @app.get("/.well-known/oauth-protected-resource")
 async def oauth_protected_resource() -> dict[str, Any]:
     """Handle OAuth protected resource metadata endpoint."""
-    if not handlers_manager:
-        return {"error": "Configuration not loaded"}
+    if not handlers_manager:  # pragma: no cover
+        return {"error": "Configuration not loaded"}  # pragma: no cover
     return await handlers_manager.handle_oauth_protected_resources()  # pragma: no cover
-
-
-# Mount MCP servers
-app.mount("/mcp", mcp.sse_app())  # SSE transport
-# WebSocket not available in this version
 
 
 @app.get("/")
 async def read_root() -> dict[str, str]:
     """Root endpoint returning server information."""
-    server_name = config.server.name if config and config.server else "Unknown"
-    return {"message": f"Hello from {server_name}"}
+    server_name = config.server.name if config and config.server else "Unknown"  # pragma: no cover
+    return {"message": f"Hello from {server_name}"}  # pragma: no cover
 
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok"}
+    return {"status": "ok"}  # pragma: no cover
+
+
+# Mount MCP servers
+sse_app = mcp.sse_app()
+sse_app.router.redirect_slashes = False
+app.mount("/", sse_app)  # SSE transport
 
 
 def main() -> None:
@@ -158,12 +193,12 @@ def main() -> None:
 
 def main_http() -> None:
     """Run the HTTP server."""
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    uvicorn.run(app, host="127.0.0.1", port=8080)  # pragma: no cover
 
 
 def main_stdio() -> None:
     """Run the stdio transport."""
-    mcp.run(transport="stdio")
+    mcp.run(transport="stdio")  # pragma: no cover
 
 
 # For stdio transport

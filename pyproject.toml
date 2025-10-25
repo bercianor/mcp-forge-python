@@ -15,6 +15,7 @@ dependencies = [
     "httpx",
     "PyJWT",
     "requests",
+    "cryptography>=46.0.3",
 ]
 
 [dependency-groups]

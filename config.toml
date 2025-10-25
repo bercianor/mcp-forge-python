@@ -14,6 +14,12 @@ host = "0.0.0.0"
 excluded_headers = ["authorization"]
 redacted_headers = ["x-api-key"]
 
+[middleware.cors]
+allow_origins = ["*"]
+allow_credentials = true
+allow_methods = ["*"]
+allow_headers = ["*"]
+
 [middleware.jwt]
 enabled = true
 
@@ -30,6 +36,8 @@ jwt_exposed_claims = "all"
 jwks_uri = "https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"
 cache_interval = 10
 whitelist_domains = ["your-keycloak.example.com"]
+issuer = "https://your.keycloack.example.com/"
+audience = "your-client-id"
 
 [[middleware.jwt.validation.local.allow_conditions]]
 expression = 'has(payload.email) && payload.email.endswith("@yourdomain.com")'

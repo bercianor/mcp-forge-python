@@ -84,5 +84,10 @@ run-stdio:
 
 # Run MCP Inspector
 [group('run')]
-dev:
+dev-http:
+    bunx --yes @modelcontextprotocol/inspector uv run http
+
+# Run MCP Inspector
+[group('run')]
+dev-stdio:
     bunx --yes @modelcontextprotocol/inspector uv run stdio
