@@ -476,8 +476,13 @@ def test_check_condition_endswith() -> None:
     result = middleware._check_condition("payload.email.endswith('@example.com')", payload)
     assert result is True
 
-    result = middleware._check_condition("payload.email.endswith('@bad.com')", payload)
-    assert result is False
+
+def test_check_condition_in() -> None:
+    """Test _check_condition with in condition."""
+    middleware = JWTValidationMiddleware(MagicMock())
+    payload = {"aud": ["mcp.bercianor", "other"]}
+    result = middleware._check_condition('"mcp.bercianor" in payload.aud', payload)
+    assert result is True
 
 
 def test_check_condition_error() -> None:

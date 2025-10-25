@@ -275,6 +275,14 @@ class JWTValidationMiddleware(BaseHTTPMiddleware):
             if field.startswith("payload_['") and field.endswith("']"):
                 key = field[10:-2]  # Remove "payload_['" and "']"
                 return payload.get(key) == value
+        elif " in " in condition:
+            value, field = condition.split(" in ", 1)
+            value = value.strip().strip('"').strip("'")
+            field = field.strip()
+            if field.startswith("payload."):
+                key = field[8:]  # Remove "payload."
+                field_value = payload.get(key)
+                return isinstance(field_value, list) and value in field_value
         elif ".endswith(" in condition and condition.endswith(")"):
             parts = condition.split(".endswith(", 1)
             if len(parts) == ENDSWITH_PARTS_COUNT and parts[0].startswith("payload."):
