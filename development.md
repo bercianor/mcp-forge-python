@@ -63,8 +63,8 @@ Edit `src/mcp_app/tools/router.py`:
 from mcp.server import FastMCP
 
 # Remove demo imports
-# from mcp_app.tools.hello_world import hello_world
-# from mcp_app.tools.whoami import whoami
+# from mcp_app.mcp_components.tools.hello_world import hello_world
+# from mcp_app.mcp_components.tools.whoami import whoami
 
 # Add your tools
 from my_app.tools.my_tools import my_business_logic_tool
