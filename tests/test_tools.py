@@ -22,7 +22,7 @@ def test_register_tools() -> None:
 
 def test_hello_world_tool() -> None:
     """Test the hello_world tool function."""
-    set_jwt_context("fake_token", {"scope": "tool:user"})
+    set_jwt_context("fake_token", {"permissions": ["tool:user"]})
     result = hello_world("Test")
     assert result == "Hello, Test! 👋"
 
@@ -36,7 +36,7 @@ def test_hello_world_tool_no_jwt() -> None:
 
 def test_hello_world_tool_insufficient_permissions() -> None:
     """Test hello_world tool with JWT but insufficient permissions."""
-    set_jwt_context("fake_token", {"scope": "tool:admin"})  # No tool:user scope
+    set_jwt_context("fake_token", {"permissions": ["tool:admin"]})  # No tool:user scope
     with pytest.raises(PermissionError, match="Insufficient permissions: tool:user scope required"):
         hello_world("Test")
 
@@ -50,7 +50,7 @@ def test_whoami_tool_no_jwt() -> None:
 
 def test_whoami_tool_with_jwt() -> None:
     """Test the whoami tool with JWT."""
-    test_payload = {"sub": "user123", "roles": ["admin"], "scope": "tool:admin"}
+    test_payload = {"sub": "user123", "roles": ["admin"], "permissions": ["tool:admin"]}
     jwt_payload.set(test_payload)  # Simulate decoded payload
     result = whoami()
     assert result == test_payload
@@ -58,7 +58,7 @@ def test_whoami_tool_with_jwt() -> None:
 
 def test_whoami_tool_insufficient_permissions() -> None:
     """Test whoami tool with JWT but insufficient permissions."""
-    test_payload = {"sub": "user123", "roles": ["admin"], "scope": "tool:user"}
+    test_payload = {"sub": "user123", "roles": ["admin"], "permissions": ["tool:user"]}
     jwt_payload.set(test_payload)  # No tool:admin scope
     with pytest.raises(
         PermissionError, match="Insufficient permissions: tool:admin scope required"
@@ -73,11 +73,11 @@ def test_whoami_tool_with_filtered_claims() -> None:
         "sub": "user123",
         "roles": ["admin"],
         "email": "user@example.com",
-        "scope": "tool:admin",
+        "permissions": ["tool:admin"],
     }
     set_jwt_context("fake_token", test_payload)
     result = whoami()
-    assert result == {"sub": "user123", "roles": ["admin"], "scope": "tool:admin"}
+    assert result == {"sub": "user123", "roles": ["admin"], "permissions": ["tool:admin"]}
     assert "email" not in result
 
 
@@ -88,7 +88,7 @@ def test_whoami_tool_with_all_claims() -> None:
         "sub": "user123",
         "roles": ["admin"],
         "email": "user@example.com",
-        "scope": "tool:admin",
+        "permissions": ["tool:admin"],
     }
     set_jwt_context("fake_token", test_payload)
     result = whoami()
@@ -103,7 +103,7 @@ def test_whoami_tool_with_invalid_claims_config() -> None:
         "sub": "user123",
         "roles": ["admin"],
         "email": "user@example.com",
-        "scope": "tool:admin",
+        "permissions": ["tool:admin"],
     }
     set_jwt_context("fake_token", test_payload)
     result = whoami()

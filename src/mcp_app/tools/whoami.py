@@ -22,9 +22,8 @@ def whoami() -> dict[str, Any] | str:
     if not payload:
         return "No JWT available (running in stdio mode or invalid token)"
 
-    scope = payload.get("scope", "")
-    scopes = scope.split() if isinstance(scope, str) else scope or []
-    if "tool:admin" not in scopes:
+    permissions = payload.get("permissions", [])
+    if "tool:admin" not in permissions:
         msg = "Insufficient permissions: tool:admin scope required"
         raise PermissionError(msg)
 

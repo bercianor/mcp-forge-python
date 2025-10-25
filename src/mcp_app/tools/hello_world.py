@@ -19,9 +19,8 @@ def hello_world(name: str) -> str:
     """
     payload = get_jwt_payload()
     if payload:  # Only check scopes if JWT is present (HTTP mode)
-        scope = payload.get("scope", "")
-        scopes = scope.split() if isinstance(scope, str) else scope or []
-        if "tool:user" not in scopes:
+        permissions = payload.get("permissions", [])
+        if "tool:user" not in permissions:
             msg = "Insufficient permissions: tool:user scope required"
             raise PermissionError(msg)
     # In stdio mode (no JWT), allow execution

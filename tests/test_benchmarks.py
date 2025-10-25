@@ -25,7 +25,7 @@ class TestBenchmarks:
     def test_whoami_benchmark(self, benchmark: Callable[[Callable], None]) -> None:  # type: ignore[PGH003]
         """Benchmark whoami tool performance."""
         # Mock payload for testing
-        mock_payload = {"sub": "user123", "roles": ["admin"], "scope": "tool:admin"}
+        mock_payload = {"sub": "user123", "roles": ["admin"], "permissions": ["tool:admin"]}
         jwt_payload.set(mock_payload)
 
         def run_whoami() -> dict[str, Any] | str:
