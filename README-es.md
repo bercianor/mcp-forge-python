@@ -58,7 +58,7 @@ Una plantilla completa y production-ready de servidor MCP (Model Context Protoco
 
 ### Dependencias Externas
 
-- **Python**: >= 3.10
+- **Python**: >= 3.11
 - **uv**: Gestor de dependencias y entornos virtuales (instálalo desde [astral.sh/uv](https://astral.sh/uv))
 - **just** (opcional): Ejecutor de comandos simplificado (instálalo desde [just.systems](https://just.systems/install.sh))
 - **Docker** (opcional): Para construcción de imágenes
@@ -112,12 +112,14 @@ uv run stdio
 # Testing & Calidad
 just test                    # Ejecutar todos los tests
 just cov                     # Ejecutar tests con reporte de cobertura
+just bench                   # Ejecutar benchmarks
 just lint                    # Linting y formateo de código
 just typing                  # Verificación de tipos
 just check-all              # Ejecutar todas las verificaciones de calidad
 
 # Ciclo de Vida
 just install                # Instalar/actualizar dependencias
+just update                 # Actualizar dependencias a las últimas versiones
 just clean                  # Remover todos los archivos temporales (.venv, caches, dist)
 just clean-cache            # Limpiar caches únicamente (mantener .venv)
 just fresh                  # Limpiar + instalación fresca
@@ -125,6 +127,8 @@ just fresh                  # Limpiar + instalación fresca
 # Ejecución
 just run                    # Ejecutar servidor HTTP
 just run-stdio              # Ejecutar modo stdio
+just dev-http               # Ejecutar servidor HTTP con MCP Inspector
+just dev-stdio              # Ejecutar servidor stdio con MCP Inspector
 ```
 
 ### Transportes Soportados
@@ -156,7 +160,44 @@ Ejemplo en `config.toml`.
 
 Ver `config.toml` para ejemplo de configuración.
 
-**Nota de seguridad**: Por defecto, el servidor se ejecuta en `127.0.0.1` para evitar exposiciones no deseadas. Cambia a `0.0.0.0` solo si es necesario y con las medidas de seguridad apropiadas.
+### Configuración Auth
+
+Para flujos OAuth, configura la sección auth:
+
+```toml
+[auth]
+client_id = "your-client-id"
+client_secret = "your-client-secret"
+redirect_uri = "http://localhost:8080/callback"
+```
+
+### Configuración CORS
+
+Configura Cross-Origin Resource Sharing:
+
+```toml
+[middleware.cors]
+allow_origins = ["https://yourdomain.com", "http://localhost:3000"]
+allow_credentials = true
+allow_methods = ["GET", "POST", "PUT", "DELETE"]
+allow_headers = ["*"]
+```
+
+### Exposición de Claims JWT
+
+Controla qué claims JWT son accesibles para las herramientas MCP:
+
+```toml
+# Exponer todos los claims (no recomendado para producción)
+jwt_exposed_claims = "all"
+
+# O exponer solo claims específicos
+jwt_exposed_claims = ["user_id", "email", "roles"]
+```
+
+Nota: Los claims `roles` y `scope` siempre se exponen para propósitos de autorización.
+
+**Nota de seguridad**: Por defecto, el servidor se ejecuta en `127.0.0.1` para evitar exposiciones no deseadas. Configura el host y puerto en `config.toml` bajo `[server.transport.http]`. Cambia a `0.0.0.0` solo si es necesario y con las medidas de seguridad apropiadas.
 
 ## Consideraciones de Seguridad
 
@@ -204,11 +245,49 @@ Las dependencias se actualizan regularmente para abordar vulnerabilidades conoci
 - Mantener dependencias actualizadas
 - Ejecutar tests de seguridad regularmente
 
+### Validación de URIs
+
+Las URIs de OAuth y JWKS se validan contra dominios en whitelist para prevenir ataques SSRF.
+
+### Dependencias Seguras
+
+Las dependencias se actualizan regularmente para abordar vulnerabilidades conocidas. Ejecuta `uv lock --upgrade` para actualizar a las versiones más recientes seguras.
+
+### Lista de Verificación para Producción
+
+- Usar estrategia JWT "external" con un proxy apropiado (Istio, Envoy)
+- Configurar claims expuestos mínimos
+- Habilitar logging de acceso con redacción
+- Validar todas las URIs contra dominios confiables
+- Mantener dependencias actualizadas
+- Ejecutar tests de seguridad regularmente
+
 ## Documentación
 
 - [Documentación Completa](docs/index.md) - Guía completa incluyendo desarrollo, configuración y contribución.
 - [Guía de Desarrollo](DEVELOPMENT.md) - Cómo usar esto como plantilla.
 - [Contribuyendo](CONTRIBUTING.md) - Guías para contribuidores.
+
+## Arquitectura del Proyecto
+
+```
+src/mcp_app/
+├── main.py          # Punto de entrada de la aplicación y configuración FastAPI
+├── config.py        # Modelos de configuración Pydantic
+├── context.py       # Gestión de contexto JWT para compartir claims de forma segura
+├── handlers/        # Manejadores de endpoints OAuth (RFC 8414 & RFC 9728)
+├── middlewares/     # Middlewares personalizados (JWT, logs de acceso, CORS)
+└── tools/           # Herramientas MCP y router de registro
+```
+
+### Componentes Core
+
+- **main.py**: Inicializa el servidor FastMCP, aplicación FastAPI, middlewares y endpoints OAuth
+- **config.py**: Configuración basada en TOML con modelos Pydantic
+- **context.py**: Compartición de contexto JWT async-safe entre middlewares y herramientas
+- **handlers/**: Servidor de autorización OAuth y endpoints de metadata de recursos protegidos
+- **middlewares/**: Validación JWT, logging de acceso y manejo CORS
+- **tools/**: Implementaciones de herramientas MCP y sistema de registro
 
 ## Desarrollo
 
@@ -228,4 +307,4 @@ Este proyecto está licenciado bajo Unlicense - consulta el archivo [LICENSE](LI
 
 ## Créditos
 
-Traducción completa a Python del proyecto [MCP Forge](https://github.com/achetronic/mcp-forge) (Go), manteniendo todas las funcionalidades y nivel de seguridad del original.
+Esta es una implementación en Python del proyecto [MCP Forge](https://github.com/achetronic/mcp-forge) (Go), extendida con endpoints adicionales de flujos OAuth e implementaciones específicas de Python manteniendo estándares de seguridad.
