@@ -11,9 +11,11 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
+import httpx
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from mcp.server import FastMCP
 
 from mcp_app.config import Configuration, load_config_from_file
@@ -29,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 # Global variable to hold the application's configuration
 config: Configuration | None = None
+
+# HTTP status constants
+HTTP_OK = 200
 
 
 def load_configuration() -> None:
@@ -168,6 +173,59 @@ async def read_root() -> dict[str, str]:
     """Root endpoint returning server information."""
     server_name = config.server.name if config and config.server else "Unknown"  # pragma: no cover
     return {"message": f"Hello from {server_name}"}  # pragma: no cover
+
+
+@app.get("/login")
+async def login() -> Response:
+    """Redirect to Auth0 login."""
+    if (
+        not config
+        or not config.auth
+        or not config.middleware
+        or not config.middleware.jwt
+        or not config.middleware.jwt.validation
+        or not config.middleware.jwt.validation.local
+    ):
+        return JSONResponse(status_code=400, content={"error": "Config incomplete"})
+    local_config = config.middleware.jwt.validation.local
+    auth_url = (
+        f"{local_config.issuer}authorize?"
+        f"client_id={config.auth.client_id}&"
+        "response_type=code&"
+        f"redirect_uri={config.auth.redirect_uri}&"
+        "scope=openid profile email&"
+        f"audience={local_config.audience}"
+    )
+    return RedirectResponse(auth_url)
+
+
+@app.get("/callback")
+async def callback(code: str) -> dict[str, Any]:
+    """Exchange code for token."""
+    if (
+        not config
+        or not config.auth
+        or not config.middleware
+        or not config.middleware.jwt
+        or not config.middleware.jwt.validation
+        or not config.middleware.jwt.validation.local
+    ):
+        return {"error": "Config incomplete"}
+    local_config = config.middleware.jwt.validation.local
+    token_url = f"{local_config.issuer}oauth/token"
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": config.auth.client_id,
+        "client_secret": config.auth.client_secret,
+        "code": code,
+        "redirect_uri": config.auth.redirect_uri,
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=data, timeout=10.0)
+    if response.status_code == HTTP_OK:
+        token_data = response.json()
+        return {"access_token": token_data.get("access_token")}
+    return {"error": "Failed to get token", "details": response.text}
 
 
 @app.get("/health")
