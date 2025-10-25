@@ -9,7 +9,7 @@
 [![Contributors](https://img.shields.io/github/contributors/bercianor/mcp-forge-python)](https://github.com/bercianor/mcp-forge-python/graphs/contributors)
 [![Last Commit](https://img.shields.io/github/last-commit/bercianor/mcp-forge-python)](https://github.com/bercianor/mcp-forge-python)
 
-A comprehensive, production-ready MCP (Model Context Protocol) server template built with Python, featuring OAuth 2.0 authentication, JWT validation, and seamless deployment options for developers building AI-powered applications.
+A comprehensive, production-ready MCP (Model Context Protocol) server template built with Python. This is a Python port of the original MCP Forge Go project, featuring OAuth 2.0 authentication, JWT validation, and seamless deployment options for developers building AI-powered applications.
 
 ## Key Features of MCP Forge Python
 
@@ -26,8 +26,10 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 
 ## Built-in MCP Tools
 
-- **hello_world**: Personalized greeting functionality
-- **whoami**: JWT-based user information exposure
+The server includes several MCP tools registered via the router:
+
+- **hello_world**: Personalized greeting functionality (requires `tool:user` scope in HTTP mode)
+- **whoami**: JWT-based user information exposure from the JWT payload
 
 ## Security & Middleware
 
@@ -35,18 +37,32 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 - **JWT Validation**: Dual strategies for token authentication
   - Local validation using JWKS URI and CEL expressions
   - External proxy delegation (Istio-compatible)
+- **CORS**: Configurable Cross-Origin Resource Sharing
+- **JWT Context**: Secure sharing of JWT claims between middlewares and MCP tools
 
 ## OAuth 2.0 Integration (RFC 8414 & RFC 9728)
 
 - **OAuth Authorization Server**: OpenID Connect configuration proxy
 - **Protected Resource Metadata**: Complete OAuth resource discovery endpoints
+- **OAuth Flows**: Built-in login and callback endpoints for authorization code flow
 
 ## Flexible Configuration
 
 - TOML-based configuration system with dedicated sections for:
   - Server settings (name, version, transport)
-  - Middleware configuration (logging, JWT)
+  - Middleware configuration (logging, JWT, CORS)
   - OAuth integration (authorization servers, protected resources)
+  - Auth settings for OAuth flows (client credentials, redirect URIs)
+  - JWT claims exposure configuration
+
+## Additional Endpoints
+
+Beyond MCP protocol endpoints, the server provides:
+
+- **GET /**: Server information
+- **GET /health**: Health check endpoint
+- **GET /login**: Initiates OAuth authorization code flow (redirects to Auth0/Keycloak)
+- **GET /callback**: Handles OAuth callback and exchanges code for token
 
 ## Production-Ready Deployment
 
@@ -58,7 +74,7 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 
 ### External Dependencies
 
-- **Python**: >= 3.10
+- **Python**: >= 3.11
 - **uv**: Dependency and virtual environment manager (install from [astral.sh/uv](https://astral.sh/uv))
 - **just** (optional): Simplified command runner (install from [just.systems](https://just.systems/install.sh))
 - **Docker** (optional): For image building
@@ -81,12 +97,25 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
   - `PyJWT`: JWT handling
   - `requests`: Synchronous HTTP client
 
+- **Production dependencies**:
+  - `fastapi`: ASGI web framework
+  - `uvicorn[standard]`: ASGI server with SSE support
+  - `pydantic`: Data validation
+  - `pydantic-settings`: Configuration from files
+  - `tomli`: TOML parser for Python < 3.11 (uses `tomllib` for Python 3.11+)
+  - `mcp[cli]`: MCP Python SDK
+  - `httpx`: Asynchronous HTTP client
+  - `PyJWT`: JWT handling
+  - `requests`: Synchronous HTTP client
+  - `cryptography`: Cryptographic operations
+
 - **Development dependencies**:
   - `ruff`: Linting and formatting
   - `pyright`: Type checking
   - `pytest`: Testing framework
   - `pytest-asyncio`: Async support for pytest
   - `coverage`: Code coverage
+  - `pytest-benchmark`: Performance benchmarking
 
 ## Installation & Setup
 
@@ -95,10 +124,13 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 uv sync
 
 # Install package (enables direct commands)
-uv pip install .
+uv pip install -e .
 
 # Run HTTP server with SSE
 uv run http
+
+# Alternative: Run stdio server for local AI clients
+uv run stdio
 ```
 
 ## Development Commands
@@ -107,12 +139,14 @@ uv run http
 # Testing & Quality
 just test                    # Run all tests
 just cov                     # Run tests with coverage report
+just bench                   # Run benchmarks
 just lint                    # Lint and format code
 just typing                  # Type checking
 just check-all              # Run all quality checks
 
 # Lifecycle
 just install                # Install/update dependencies
+just update                 # Update dependencies to latest versions
 just clean                  # Remove all temporary files (.venv, caches, dist)
 just clean-cache            # Clean caches only (keep .venv)
 just fresh                  # Clean + fresh install
@@ -120,11 +154,8 @@ just fresh                  # Clean + fresh install
 # Running
 just run                    # Run HTTP server
 just run-stdio              # Run stdio mode
-
-# Run stdio server
-
-uv run stdio
-
+just dev-http               # Run HTTP server with MCP Inspector
+just dev-stdio              # Run stdio server with MCP Inspector
 ```
 
 > **Note**: For development, use `uv pip install -e .` for editable installation.
@@ -143,6 +174,7 @@ The JWT middleware supports two validation strategies:
 - Validates JWTs directly in the MCP server.
 - Downloads public keys from a JWKS endpoint (configured in `jwks_uri`).
 - Supports configurable cache and CEL conditions for advanced permissions.
+- MCP tools check for required scopes (e.g., `tool:user` for hello_world).
 - **Requirement**: OAuth server with JWKS endpoint (e.g. Keycloak).
 
 ### "external" Strategy
@@ -158,7 +190,44 @@ Example in `config.toml`.
 
 See `config.toml` for configuration example.
 
-**Security Note**: By default, the server runs on `127.0.0.1` to avoid unwanted exposures. Change to `0.0.0.0` only if necessary and with appropriate security measures.
+### Auth Configuration
+
+For OAuth flows, configure the auth section:
+
+```toml
+[auth]
+client_id = "your-client-id"
+client_secret = "your-client-secret"
+redirect_uri = "http://localhost:8080/callback"
+```
+
+### CORS Configuration
+
+Configure Cross-Origin Resource Sharing:
+
+```toml
+[middleware.cors]
+allow_origins = ["https://yourdomain.com", "http://localhost:3000"]
+allow_credentials = true
+allow_methods = ["GET", "POST", "PUT", "DELETE"]
+allow_headers = ["*"]
+```
+
+### JWT Claims Exposure
+
+Control which JWT claims are accessible to MCP tools:
+
+```toml
+# Expose all claims (not recommended for production)
+jwt_exposed_claims = "all"
+
+# Or expose only specific claims
+jwt_exposed_claims = ["user_id", "email", "roles"]
+```
+
+Note: `roles` and `scope` claims are always exposed for authorization purposes.
+
+**Security Note**: By default, the server runs on `127.0.0.1` to avoid unwanted exposures. Configure the host and port in `config.toml` under `[server.transport.http]`. Change to `0.0.0.0` only if necessary and with appropriate security measures.
 
 ## Security Considerations
 
@@ -166,14 +235,15 @@ This template implements several security measures to protect against common vul
 
 ### JWT Claims Exposure
 
-To minimize data exposure, configure which JWT claims are accessible in the context:
+To minimize data exposure, configure which JWT claims are accessible to MCP tools:
 
 ```toml
-[context]
 jwt_exposed_claims = ["user_id", "roles"]  # Only expose specific claims
 # or
 jwt_exposed_claims = "all"  # Expose all claims (not recommended for production)
 ```
+
+Note: `roles` and `scope` claims are always exposed for authorization purposes, regardless of this configuration.
 
 ### Access Logging
 
@@ -212,6 +282,27 @@ Dependencies are regularly updated to address known vulnerabilities. Run `uv loc
 - [Development Guide](DEVELOPMENT.md) - How to use this as a template.
 - [Contributing](CONTRIBUTING.md) - Guidelines for contributors.
 
+## Project Architecture
+
+```
+src/mcp_app/
+├── main.py          # Application entry point and FastAPI setup
+├── config.py        # Pydantic configuration models
+├── context.py       # JWT context management for secure claim sharing
+├── handlers/        # OAuth endpoints handlers (RFC 8414 & RFC 9728)
+├── middlewares/     # Custom middlewares (JWT, access logs, CORS)
+└── tools/           # MCP tools and registration router
+```
+
+### Core Components
+
+- **main.py**: Initializes FastMCP server, FastAPI app, middlewares, and OAuth endpoints
+- **config.py**: TOML-based configuration with Pydantic models
+- **context.py**: Async-safe JWT context sharing between middlewares and tools
+- **handlers/**: OAuth authorization server and protected resource metadata endpoints
+- **middlewares/**: JWT validation, access logging, and CORS handling
+- **tools/**: MCP tool implementations and registration system
+
 ## Development
 
 For detailed development instructions, including how to use this project as a template for your own MCP servers, see [DEVELOPMENT.md](DEVELOPMENT.md).
@@ -230,4 +321,4 @@ This project is licensed under the Unlicense - see the [LICENSE](LICENSE) file f
 
 ## Credits
 
-Complete translation to Python of the [MCP Forge](https://github.com/achetronic/mcp-forge) project (Go), maintaining all functionalities and security level of the original.
+This is a Python port of the [MCP Forge](https://github.com/achetronic/mcp-forge) project (Go), extended with additional OAuth flow endpoints and Python-specific implementations while maintaining security standards.

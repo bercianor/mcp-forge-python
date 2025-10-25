@@ -20,14 +20,14 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Linux, macOS, Windows",
   "programmingLanguage": "Python",
-  "softwareVersion": "1.0.0",
+  "softwareVersion": "0.1.0",
   "author": {
     "@type": "Person",
     "name": "Ruben",
     "url": "https://github.com/bercianor"
   },
   "codeRepository": "https://github.com/bercianor/mcp-forge-python",
-  "license": "https://bercianor.es/mcp-forge-python/LICENSE",
+  "license": "https://bercianor.es/mcp-forge-python/LICENSE.txt",
   "offers": {
     "@type": "Offer",
     "price": "0",
@@ -60,8 +60,10 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 
 ## Built-in MCP Tools
 
-- **hello_world**: Personalized greeting functionality
-- **whoami**: JWT-based user information exposure
+The server includes several MCP tools registered via the router:
+
+- **hello_world**: Personalized greeting functionality (requires `tool:user` scope in HTTP mode)
+- **whoami**: JWT-based user information exposure from the JWT payload
 
 ## Security & Middleware
 
@@ -74,6 +76,7 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 
 - **OAuth Authorization Server**: OpenID Connect configuration proxy
 - **Protected Resource Metadata**: Complete OAuth resource discovery endpoints
+- **OAuth Flows**: Built-in login and callback endpoints for authorization code flow
 
 ## Flexible Configuration
 
@@ -81,6 +84,7 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
   - Server settings (name, version, transport)
   - Middleware configuration (logging, JWT)
   - OAuth integration (authorization servers, protected resources)
+  - Auth settings for OAuth flows (client credentials, redirect URIs)
 
 ## Production-Ready Deployment
 
@@ -92,8 +96,9 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 
 ### System Requirements
 
-- **Python Version**: 3.10 or higher
+- **Python Version**: 3.11 or higher
 - **Package Manager**: uv for dependency management ([installation guide](https://astral.sh/uv))
+- **Optional**: just for simplified command execution ([installation guide](https://just.systems/install.sh))
 
 ### Installation & Setup
 
@@ -109,7 +114,32 @@ uv run http
 
 # Alternative: Run stdio server for local AI clients
 uv run stdio
+
+# Or use just commands
+just run      # HTTP server
+just run-stdio # Stdio server
 ```
+
+## Project Architecture
+
+```
+src/mcp_app/
+├── main.py          # Application entry point and FastAPI setup
+├── config.py        # Pydantic configuration models
+├── context.py       # JWT context management for secure claim sharing
+├── handlers/        # OAuth endpoints handlers (RFC 8414 & RFC 9728)
+├── middlewares/     # Custom middlewares (JWT, access logs, CORS)
+└── tools/           # MCP tools and registration router
+```
+
+### Core Components
+
+- **main.py**: Initializes FastMCP server, FastAPI app, middlewares, and OAuth endpoints
+- **config.py**: TOML-based configuration with Pydantic models
+- **context.py**: Async-safe JWT context sharing between middlewares and tools
+- **handlers/**: OAuth authorization server and protected resource metadata endpoints
+- **middlewares/**: JWT validation, access logging, and CORS handling
+- **tools/**: MCP tool implementations and registration system
 
 ## Documentation & Resources
 

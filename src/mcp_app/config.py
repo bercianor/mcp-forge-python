@@ -30,6 +30,7 @@ class ServerTransportHTTPConfig(BaseModel):
     """HTTP transport configuration."""
 
     host: str
+    port: int = 8080
 
 
 class ServerTransportConfig(BaseModel):

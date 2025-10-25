@@ -18,8 +18,11 @@ from mcp_app.config import (
     ServerConfig,
 )
 from mcp_app.main import (
+    get_host_and_port,
     handlers_manager,
     main,
+    main_http,
+    main_stdio,
     safe_log_config,
 )
 from mcp_app.middlewares.access_logs import AccessLogsMiddleware
@@ -134,6 +137,13 @@ def test_main_stdio(mock_mcp: MagicMock) -> None:
     mock_mcp.run.assert_called_once_with(transport="stdio")
 
 
+@patch("mcp_app.main.mcp")
+def test_main_stdio_function(mock_mcp: MagicMock) -> None:
+    """Test main_stdio function."""
+    main_stdio()
+    mock_mcp.run.assert_called_once_with(transport="stdio")
+
+
 @patch("sys.argv", ["main.py"])
 @patch("uvicorn.run")
 def test_main_http(mock_uvicorn_run: MagicMock) -> None:
@@ -142,8 +152,27 @@ def test_main_http(mock_uvicorn_run: MagicMock) -> None:
     mock_uvicorn_run.assert_called_once()
     args, kwargs = mock_uvicorn_run.call_args
     assert isinstance(args[0], FastAPI)
-    assert kwargs["host"] == "127.0.0.1"
+    assert kwargs["host"] == "0.0.0.0"  # noqa: S104  # From config.toml
     assert kwargs["port"] == PORT_DEFAULT
+
+
+@patch("uvicorn.run")
+def test_main_http_function(mock_uvicorn_run: MagicMock) -> None:
+    """Test main_http function."""
+    main_http()
+    mock_uvicorn_run.assert_called_once()
+    args, kwargs = mock_uvicorn_run.call_args
+    assert isinstance(args[0], FastAPI)
+    assert kwargs["host"] == "0.0.0.0"  # noqa: S104  # From config.toml
+    assert kwargs["port"] == PORT_DEFAULT
+
+
+@patch("mcp_app.main.config", None)
+def test_get_host_and_port_no_config() -> None:
+    """Test get_host_and_port with no config."""
+    host, port = get_host_and_port()
+    assert host == "127.0.0.1"
+    assert port == PORT_DEFAULT
 
 
 @patch("mcp_app.main.logger")

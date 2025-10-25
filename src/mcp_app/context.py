@@ -40,6 +40,8 @@ def filter_payload(payload: dict[str, Any]) -> dict[str, Any]:
     """
     Filter the JWT payload based on exposed_claims configuration.
 
+    Always includes 'roles' and 'scope' claims for authorization.
+
     Args:
         payload: The full JWT payload.
 
@@ -47,10 +49,13 @@ def filter_payload(payload: dict[str, Any]) -> dict[str, Any]:
         Filtered payload dictionary.
 
     """
+    # Always include roles and scope for authorization
+    always_include = {"roles", "scope"}
     if jwt_context_config.exposed_claims == "all":
         return payload
     if isinstance(jwt_context_config.exposed_claims, list):
-        return {k: v for k, v in payload.items() if k in jwt_context_config.exposed_claims}
+        exposed = set(jwt_context_config.exposed_claims) | always_include
+        return {k: v for k, v in payload.items() if k in exposed}
     # Fallback to all if misconfigured
     return payload
 
