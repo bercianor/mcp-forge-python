@@ -14,6 +14,12 @@ host = "0.0.0.0"
 excluded_headers = ["authorization"]
 redacted_headers = ["x-api-key"]
 
+[middleware.cors]
+allow_origins = ["*"]
+allow_credentials = true
+allow_methods = ["*"]
+allow_headers = ["*"]
+
 [middleware.jwt]
 enabled = true
 

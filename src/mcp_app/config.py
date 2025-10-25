@@ -82,10 +82,20 @@ class JWTConfig(BaseModel):
     validation: JWTValidationConfig | None = None
 
 
+class CORSConfig(BaseModel):
+    """CORS middleware configuration."""
+
+    allow_origins: list[str] = ["*"]
+    allow_credentials: bool = True
+    allow_methods: list[str] = ["*"]
+    allow_headers: list[str] = ["*"]
+
+
 class MiddlewareConfig(BaseModel):
     """Middleware configuration."""
 
     access_logs: AccessLogsConfig
+    cors: CORSConfig | None = None
     jwt: JWTConfig | None = None
 
 

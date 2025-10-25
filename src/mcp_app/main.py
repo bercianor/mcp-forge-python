@@ -13,6 +13,7 @@ from typing import Any
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from mcp.server import FastMCP
 
 from mcp_app.config import Configuration, load_config_from_file
@@ -81,7 +82,30 @@ app = FastAPI(
     title="MCP-Forge-Python",
     description="A Python port of the MCP Forge Go project.",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
+
+# Add CORS middleware
+cors_config = (
+    config.middleware.cors if config and config.middleware and config.middleware.cors else None
+)
+if cors_config:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_config.allow_origins,
+        allow_credentials=cors_config.allow_credentials,
+        allow_methods=cors_config.allow_methods,
+        allow_headers=cors_config.allow_headers,
+    )
+else:
+    # Default CORS configuration
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Add middlewares
 if config and config.middleware:  # pragma: no cover
@@ -129,11 +153,6 @@ async def oauth_protected_resource() -> dict[str, Any]:
     return await handlers_manager.handle_oauth_protected_resources()  # pragma: no cover
 
 
-# Mount MCP servers
-app.mount("/mcp", mcp.sse_app())  # SSE transport
-# WebSocket not available in this version
-
-
 @app.get("/")
 async def read_root() -> dict[str, str]:
     """Root endpoint returning server information."""
@@ -145,6 +164,12 @@ async def read_root() -> dict[str, str]:
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+# Mount MCP servers
+sse_app = mcp.sse_app()
+sse_app.router.redirect_slashes = False
+app.mount("/", sse_app)  # SSE transport
 
 
 def main() -> None:
