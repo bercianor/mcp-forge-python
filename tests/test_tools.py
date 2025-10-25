@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_app.context import jwt_context_config, jwt_payload, set_exposed_claims, set_jwt_context
-from mcp_app.tools.hello_world import hello_world
-from mcp_app.tools.router import register_tools
-from mcp_app.tools.whoami import whoami
+from mcp_app.mcp_components.router import register_tools
+from mcp_app.mcp_components.tools.hello_world import hello_world
+from mcp_app.mcp_components.tools.whoami import whoami
 
 NUM_TOOLS = 2
 
@@ -15,9 +15,18 @@ NUM_TOOLS = 2
 def test_register_tools() -> None:
     """Test that register_tools registers the tools."""
     mcp = MagicMock()
-    register_tools(mcp)
-    # Check that tool decorator was called twice
+    register_tools(mcp, "stdio")
+    # Check that tool decorator was called twice and resource once
     assert mcp.tool.call_count == NUM_TOOLS
+
+
+def test_register_tools_http_mode() -> None:
+    """Test that register_tools in http mode does not register resources."""
+    mcp = MagicMock()
+    register_tools(mcp, "http")
+    # Check that tool decorator was called twice and resource not called
+    assert mcp.tool.call_count == NUM_TOOLS
+    assert mcp.resource.call_count == 0
 
 
 def test_hello_world_tool() -> None:

@@ -23,7 +23,13 @@ logger = logging.getLogger(__name__)
 app_config = AppConfig()
 app_config.load_configuration()
 
-mcp_server = MCPServer()
+
+def get_mode() -> str:
+    """Determine the mode based on command line arguments."""
+    return "stdio" if len(sys.argv) > 1 and sys.argv[1] == "stdio" else "http"
+
+
+mcp_server = MCPServer(mode=get_mode())
 
 fastapi_app = FastAPIApp(app_config.config, mcp_server.mcp)
 
