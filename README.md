@@ -22,7 +22,7 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 ## Communication Transports
 
 - **Stdio Transport**: Standard input/output communication for local AI clients like Claude Desktop
-- **HTTP with SSE**: Server-Sent Events for real-time web-based communication
+- **HTTP Streaming**: Streamable HTTP for real-time web-based communication
 
 ## Built-in MCP Tools
 
@@ -88,7 +88,7 @@ Beyond MCP protocol endpoints, the server provides:
 
 - **Production dependencies**:
   - `fastapi`: ASGI web framework
-  - `uvicorn[standard]`: ASGI server with SSE support
+  - `uvicorn[standard]`: ASGI server with HTTP streaming support
   - `pydantic`: Data validation
   - `pydantic-settings`: Configuration from files
   - `tomli`: TOML parser for Python < 3.11
@@ -115,7 +115,7 @@ uv sync
 # Install package (enables direct commands)
 uv pip install -e .
 
-# Run HTTP server with SSE
+# Run HTTP server with streaming
 uv run http
 
 # Alternative: Run stdio server for local AI clients
@@ -151,7 +151,7 @@ just dev-stdio              # Run stdio server with MCP Inspector
 
 ### Supported Transports
 
-- **HTTP + SSE**: For remote clients like Claude Web. Endpoint `/mcp` with SSE. Run with `uv run http`.
+- **HTTP Streaming**: For remote clients like Claude Web. Endpoint `/mcp` with HTTP streaming. Run with `uv run http`.
 - **Stdio**: For local clients like Claude Desktop. Run with `uv run stdio`.
 
 ## JWT Configuration
