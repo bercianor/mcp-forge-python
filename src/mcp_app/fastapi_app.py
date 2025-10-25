@@ -6,7 +6,7 @@ This module handles FastAPI app configuration, middlewares, and endpoints.
 
 import logging
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
 
 import httpx
@@ -56,9 +56,9 @@ class FastAPIApp:
         self._add_endpoints(app)
 
         # Mount MCP servers
-        sse_app = self.mcp.sse_app()
-        sse_app.router.redirect_slashes = False
-        app.mount("/", sse_app)  # SSE transport
+        http_app = self.mcp.streamable_http_app()
+        http_app.router.redirect_slashes = False
+        app.mount("/mcp", http_app)  # Streamable HTTP transport
 
         return app
 
@@ -66,11 +66,13 @@ class FastAPIApp:
     async def _lifespan(self, app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no cover
         """Application lifespan context manager."""
         _ = app  # Required by FastAPI lifespan signature
-        # Set JWT exposed claims configuration if config is loaded
-        if self.config:
-            set_exposed_claims(self.config.jwt_exposed_claims)
+        async with AsyncExitStack() as stack:
+            await stack.enter_async_context(self.mcp.session_manager.run())
+            # Set JWT exposed claims configuration if config is loaded
+            if self.config:
+                set_exposed_claims(self.config.jwt_exposed_claims)
 
-        yield
+            yield
 
         logger.info("Application shutting down.")
 
