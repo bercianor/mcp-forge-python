@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42e00248506f1a8536e0fb3683cace81e5627b32">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42f95aea65d716c01456d600394baa7e1ffc27de">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -72,32 +72,61 @@
 <p>The server uses a TOML configuration file (<code class="language-plaintext highlighter-rouge">config.toml</code>) with the following structure:</p>
 
 <div class="language-toml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nn">[server]</span>
-<span class="py">name</span> <span class="p">=</span> <span class="s">"mcp-forge-python"</span>
+<span class="py">name</span> <span class="p">=</span> <span class="s">"MCP Forge Python"</span>
 <span class="py">version</span> <span class="p">=</span> <span class="s">"0.1.0"</span>
-<span class="py">host</span> <span class="p">=</span> <span class="s">"127.0.0.1"</span>
-<span class="py">port</span> <span class="p">=</span> <span class="mi">8080</span>
-<span class="py">transport</span> <span class="p">=</span> <span class="s">"http"</span>  <span class="c"># or "stdio"</span>
 
-<span class="nn">[middleware.access_log]</span>
-<span class="py">enabled</span> <span class="p">=</span> <span class="kc">true</span>
-<span class="py">exclude_headers</span> <span class="p">=</span> <span class="p">[</span><span class="s">"authorization"</span><span class="p">,</span> <span class="s">"cookie"</span><span class="p">]</span>
-<span class="py">redact_headers</span> <span class="p">=</span> <span class="nn">["x-forwarded-user"]</span>
+<span class="nn">[server.transport]</span>
+<span class="py">type</span> <span class="p">=</span> <span class="s">"http"</span>
+
+<span class="nn">[server.transport.http]</span>
+<span class="py">host</span> <span class="p">=</span> <span class="s">"0.0.0.0"</span>
+
+<span class="nn">[middleware.access_logs]</span>
+<span class="py">excluded_headers</span> <span class="p">=</span> <span class="nn">["authorization"]</span>
+<span class="py">redacted_headers</span> <span class="p">=</span> <span class="nn">["x-api-key"]</span>
+
+<span class="nn">[middleware.cors]</span>
+<span class="py">allow_origins</span> <span class="p">=</span> <span class="nn">["*"]</span>
+<span class="py">allow_credentials</span> <span class="p">=</span> <span class="kc">true</span>
+<span class="py">allow_methods</span> <span class="p">=</span> <span class="nn">["*"]</span>
+<span class="py">allow_headers</span> <span class="p">=</span> <span class="nn">["*"]</span>
 
 <span class="nn">[middleware.jwt]</span>
-<span class="py">strategy</span> <span class="p">=</span> <span class="s">"local"</span>  <span class="c"># or "external"</span>
-<span class="py">jwks_uri</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"</span>
-<span class="py">cel_condition</span> <span class="p">=</span> <span class="s">"claims.sub != null"</span>
-<span class="py">forwarded_header</span> <span class="p">=</span> <span class="s">"x-forwarded-user"</span>
+<span class="py">enabled</span> <span class="p">=</span> <span class="kc">true</span>
 
-<span class="nn">[oauth.authorization_server]</span>
-<span class="py">issuer</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm"</span>
-<span class="py">authorization_endpoint</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/auth"</span>
-<span class="py">token_endpoint</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/token"</span>
-<span class="py">jwks_uri</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"</span>
+<span class="nn">[middleware.jwt.validation]</span>
+<span class="py">strategy</span> <span class="p">=</span> <span class="s">"local"</span>
+<span class="py">forwarded_header</span> <span class="p">=</span> <span class="s">"X-Validated-Jwt"</span>
 
-<span class="nn">[oauth.protected_resource]</span>
-<span class="py">audience</span> <span class="p">=</span> <span class="s">"mcp-forge-python"</span>
-<span class="py">scopes_supported</span> <span class="p">=</span> <span class="p">[</span><span class="s">"read"</span><span class="p">,</span> <span class="s">"write"</span><span class="p">]</span>
+<span class="nn">[middleware.jwt.validation.local]</span>
+<span class="py">jwks_uri</span> <span class="p">=</span> <span class="s">"https://your-keycloak.example.com/realms/your-realm/protocol/openid-connect/certs"</span>
+<span class="py">cache_interval</span> <span class="p">=</span> <span class="mi">10</span>
+<span class="py">whitelist_domains</span> <span class="p">=</span> <span class="nn">["your-keycloak.example.com"]</span>
+<span class="py">issuer</span> <span class="p">=</span> <span class="s">"https://your.keycloak.example.com/"</span>
+<span class="py">audience</span> <span class="p">=</span> <span class="s">"your-client-id"</span>
+
+<span class="nn">[[middleware.jwt.validation.local.allow_conditions]]</span>
+<span class="py">expression</span> <span class="p">=</span> <span class="s">'has(payload.email) &amp;&amp; payload.email.endswith("@yourdomain.com")'</span>
+
+<span class="py">jwt_exposed_claims</span> <span class="p">=</span> <span class="s">"all"</span>
+
+<span class="nn">[oauth_authorization_server]</span>
+<span class="py">enabled</span> <span class="p">=</span> <span class="kc">false</span>
+<span class="py">issuer_uri</span> <span class="p">=</span> <span class="s">"http://localhost:8080/auth/realms/master"</span>
+
+<span class="nn">[oauth_protected_resource]</span>
+<span class="py">enabled</span> <span class="p">=</span> <span class="kc">false</span>
+<span class="py">resource</span> <span class="p">=</span> <span class="s">"mcp-resource"</span>
+<span class="py">auth_servers</span> <span class="p">=</span> <span class="nn">["http://localhost:8080/auth/realms/master"]</span>
+<span class="py">jwks_uri</span> <span class="p">=</span> <span class="s">"http://localhost:8080/auth/realms/master/protocol/openid-connect/certs"</span>
+<span class="py">scopes_supported</span> <span class="p">=</span> <span class="p">[</span><span class="s">"openid"</span><span class="p">,</span> <span class="s">"profile"</span><span class="p">,</span> <span class="s">"email"</span><span class="p">]</span>
+
+<span class="py">oauth_whitelist_domains</span> <span class="p">=</span> <span class="p">[</span><span class="s">"localhost"</span><span class="p">,</span> <span class="s">"yourdomain.com"</span><span class="p">]</span>
+
+<span class="nn">[auth]</span>
+<span class="py">client_id</span> <span class="p">=</span> <span class="s">"YOUR_CLIENT_ID"</span>
+<span class="py">client_secret</span> <span class="p">=</span> <span class="s">"YOUR_CLIENT_SECRET"</span>
+<span class="py">redirect_uri</span> <span class="p">=</span> <span class="s">"http://localhost:8080/callback"</span>
 </code></pre></div></div>
 
 <h2 id="server-configuration">Server Configuration</h2>
@@ -105,9 +134,8 @@
 <ul>
   <li><code class="language-plaintext highlighter-rouge">name</code>: Server name for MCP protocol</li>
   <li><code class="language-plaintext highlighter-rouge">version</code>: Server version</li>
-  <li><code class="language-plaintext highlighter-rouge">host</code>: Bind address (use “0.0.0.0” for external access)</li>
-  <li><code class="language-plaintext highlighter-rouge">port</code>: Port to listen on</li>
-  <li><code class="language-plaintext highlighter-rouge">transport</code>: “http” for HTTP+SSE or “stdio” for standard I/O</li>
+  <li><code class="language-plaintext highlighter-rouge">transport.type</code>: Transport type (“http” or “stdio”)</li>
+  <li><code class="language-plaintext highlighter-rouge">transport.http.host</code>: Bind address for HTTP transport (use “0.0.0.0” for external access)</li>
 </ul>
 
 <h2 id="middleware-configuration">Middleware Configuration</h2>
@@ -115,18 +143,37 @@
 <h3 id="access-logs">Access Logs</h3>
 
 <ul>
-  <li><code class="language-plaintext highlighter-rouge">enabled</code>: Enable/disable access logging</li>
-  <li><code class="language-plaintext highlighter-rouge">exclude_headers</code>: Headers to completely exclude from logs</li>
-  <li><code class="language-plaintext highlighter-rouge">redact_headers</code>: Headers to redact (show as “[REDACTED]”)</li>
+  <li><code class="language-plaintext highlighter-rouge">excluded_headers</code>: Headers to completely exclude from logs</li>
+  <li><code class="language-plaintext highlighter-rouge">redacted_headers</code>: Headers to redact (show as “[REDACTED]”)</li>
+</ul>
+
+<h3 id="cors">CORS</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">allow_origins</code>: Allowed origins for CORS</li>
+  <li><code class="language-plaintext highlighter-rouge">allow_credentials</code>: Allow credentials in CORS</li>
+  <li><code class="language-plaintext highlighter-rouge">allow_methods</code>: Allowed HTTP methods</li>
+  <li><code class="language-plaintext highlighter-rouge">allow_headers</code>: Allowed headers</li>
 </ul>
 
 <h3 id="jwt-validation">JWT Validation</h3>
 
 <ul>
-  <li><code class="language-plaintext highlighter-rouge">strategy</code>: “local” (validate in server) or “external” (delegate to proxy)</li>
-  <li><code class="language-plaintext highlighter-rouge">jwks_uri</code>: JWKS endpoint for public keys (local strategy)</li>
-  <li><code class="language-plaintext highlighter-rouge">cel_condition</code>: CEL expression for claim validation</li>
-  <li><code class="language-plaintext highlighter-rouge">forwarded_header</code>: Header containing JWT for external strategy</li>
+  <li><code class="language-plaintext highlighter-rouge">enabled</code>: Enable/disable JWT middleware</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.strategy</code>: “local” (validate in server) or “external” (delegate to proxy)</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.forwarded_header</code>: Header containing JWT for external strategy</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.local.jwks_uri</code>: JWKS endpoint for public keys (local strategy)</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.local.cache_interval</code>: Cache interval for JWKS in seconds</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.local.whitelist_domains</code>: Allowed domains for JWKS URI</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.local.issuer</code>: Expected JWT issuer</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.local.audience</code>: Expected JWT audience</li>
+  <li><code class="language-plaintext highlighter-rouge">validation.local.allow_conditions</code>: List of CEL expressions for claim validation</li>
+</ul>
+
+<h3 id="jwt-claims-exposure">JWT Claims Exposure</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">jwt_exposed_claims</code>: Claims to expose in context (“all” or list of claim names)</li>
 </ul>
 
 <h2 id="oauth-configuration">OAuth Configuration</h2>
@@ -135,11 +182,36 @@
 
 <h3 id="authorization-server">Authorization Server</h3>
 
-<p>Metadata about the OAuth provider (Keycloak, Auth0, etc.).</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">enabled</code>: Enable/disable OAuth authorization server proxy</li>
+  <li><code class="language-plaintext highlighter-rouge">issuer_uri</code>: Base URI of the OAuth issuer</li>
+</ul>
 
 <h3 id="protected-resource">Protected Resource</h3>
 
-<p>Metadata about this MCP server as a protected resource.</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">enabled</code>: Enable/disable protected resource metadata</li>
+  <li><code class="language-plaintext highlighter-rouge">resource</code>: Resource identifier</li>
+  <li><code class="language-plaintext highlighter-rouge">auth_servers</code>: List of authorization server URIs</li>
+  <li><code class="language-plaintext highlighter-rouge">jwks_uri</code>: JWKS endpoint URI</li>
+  <li><code class="language-plaintext highlighter-rouge">scopes_supported</code>: Supported OAuth scopes</li>
+</ul>
+
+<h3 id="oauth-whitelist-domains">OAuth Whitelist Domains</h3>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">oauth_whitelist_domains</code>: Allowed domains for OAuth URIs to prevent SSRF</li>
+</ul>
+
+<h2 id="auth-configuration">Auth Configuration</h2>
+
+<p>For OAuth authorization code flows:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">client_id</code>: OAuth client ID</li>
+  <li><code class="language-plaintext highlighter-rouge">client_secret</code>: OAuth client secret</li>
+  <li><code class="language-plaintext highlighter-rouge">redirect_uri</code>: Redirect URI after authorization</li>
+</ul>
 
 <h2 id="environment-specific-configuration">Environment-Specific Configuration</h2>
 
@@ -157,6 +229,17 @@
 uv run http
 </code></pre></div></div>
 
+<h2 id="additional-endpoints">Additional Endpoints</h2>
+
+<p>The server provides these endpoints beyond MCP protocol:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">GET /</code>: Returns server information</li>
+  <li><code class="language-plaintext highlighter-rouge">GET /health</code>: Health check</li>
+  <li><code class="language-plaintext highlighter-rouge">GET /login</code>: Initiates OAuth login flow</li>
+  <li><code class="language-plaintext highlighter-rouge">GET /callback</code>: Handles OAuth callback</li>
+</ul>
+
 <h2 id="security-notes">Security Notes</h2>
 
 <ul>
@@ -164,6 +247,7 @@ uv run http
   <li>Always use HTTPS in production</li>
   <li>Configure appropriate CORS if needed</li>
   <li>Validate all configuration values in production</li>
+  <li>Limit <code class="language-plaintext highlighter-rouge">jwt_exposed_claims</code> to prevent PII leakage</li>
 </ul>
 
       </section>

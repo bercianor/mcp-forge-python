@@ -129,6 +129,64 @@ Example in `config.toml`:
 jwt_exposed_claims = ["user_id", "roles"]
 ```
 
+### Roles and Scopes for Tool Authorization
+
+This project implements a basic role-based access control (RBAC) system using OAuth scopes to restrict tool execution. Scopes are issued by the identity provider (e.g., Keycloak, Auth0, or other OAuth providers) and validated in tools at runtime.
+
+#### Defining Your Own Scopes and Roles
+
+You can define custom scopes and roles based on your application's needs. Scopes control access to specific tools or features, while roles group permissions.
+
+**Example Scopes** (define in your OAuth provider's API/client configuration):
+- `tool:read`: Access to read-only tools.
+- `tool:write`: Access to tools that modify data.
+- `tool:admin`: Administrative access to sensitive tools.
+
+**Example Roles** (define in your OAuth provider's user/role management):
+- `user`: Basic user role; grants `tool:read` scope.
+- `editor`: Editor role; grants `tool:read` and `tool:write` scopes.
+- `admin`: Admin role; grants all scopes.
+
+Scopes and roles are included in JWT claims (`scope` and `roles`) via your OAuth provider's rules/actions/policies. Configure your provider to map roles to scopes and include them in tokens.
+
+#### Checking Scopes in Tools
+
+To restrict a tool based on scopes, add authorization checks inside the tool function. Use `get_jwt_payload()` from `mcp_app.context` to access claims.
+
+Example for a tool requiring `tool:user` scope:
+
+```python
+from mcp_app.context import get_jwt_payload
+
+def my_tool(param: str) -> str:
+    """My tool description. Requires tool:user scope.
+
+    Args:
+        param: Parameter description.
+
+    Returns:
+        Result description.
+
+    Raises:
+        PermissionError: If user lacks required scope.
+    """
+    payload = get_jwt_payload()
+    if payload:  # Only check in HTTP mode (with JWT)
+        scope = payload.get("scope", "")
+        scopes = scope.split() if isinstance(scope, str) else scope or []
+        if "tool:user" not in scopes:
+            raise PermissionError("Insufficient permissions: tool:user scope required")
+
+    # Tool logic here
+    return f"Processed: {param}"
+```
+
+- **In HTTP mode**: Validates scopes from JWT; raises `PermissionError` if unauthorized.
+- **In stdio mode**: Allows execution without checks (for development).
+- **Always include scope checks** for sensitive tools to prevent unauthorized access.
+
+Configure your OAuth provider to issue tokens with the appropriate scopes based on user roles.
+
 ## Configuration Placeholders
 
 Before using this template, you must replace all placeholders with your actual values:

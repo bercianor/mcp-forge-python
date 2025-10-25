@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42e00248506f1a8536e0fb3683cace81e5627b32">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42f95aea65d716c01456d600394baa7e1ffc27de">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -85,14 +85,14 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Linux, macOS, Windows",
   "programmingLanguage": "Python",
-  "softwareVersion": "1.0.0",
+  "softwareVersion": "0.1.0",
   "author": {
     "@type": "Person",
     "name": "Ruben",
     "url": "https://github.com/bercianor"
   },
   "codeRepository": "https://github.com/bercianor/mcp-forge-python",
-  "license": "https://bercianor.es/mcp-forge-python/LICENSE",
+  "license": "https://bercianor.es/mcp-forge-python/LICENSE.txt",
   "offers": {
     "@type": "Offer",
     "price": "0",
@@ -129,9 +129,11 @@
 
 <h2 id="built-in-mcp-tools">Built-in MCP Tools</h2>
 
+<p>The server includes several MCP tools registered via the router:</p>
+
 <ul>
-  <li><strong>hello_world</strong>: Personalized greeting functionality</li>
-  <li><strong>whoami</strong>: JWT-based user information exposure</li>
+  <li><strong>hello_world</strong>: Personalized greeting functionality (requires <code class="language-plaintext highlighter-rouge">tool:user</code> scope in HTTP mode)</li>
+  <li><strong>whoami</strong>: JWT-based user information exposure from the JWT payload</li>
 </ul>
 
 <h2 id="security--middleware">Security &amp; Middleware</h2>
@@ -151,6 +153,7 @@
 <ul>
   <li><strong>OAuth Authorization Server</strong>: OpenID Connect configuration proxy</li>
   <li><strong>Protected Resource Metadata</strong>: Complete OAuth resource discovery endpoints</li>
+  <li><strong>OAuth Flows</strong>: Built-in login and callback endpoints for authorization code flow</li>
 </ul>
 
 <h2 id="flexible-configuration">Flexible Configuration</h2>
@@ -161,6 +164,7 @@
       <li>Server settings (name, version, transport)</li>
       <li>Middleware configuration (logging, JWT)</li>
       <li>OAuth integration (authorization servers, protected resources)</li>
+      <li>Auth settings for OAuth flows (client credentials, redirect URIs)</li>
     </ul>
   </li>
 </ul>
@@ -178,8 +182,9 @@
 <h3 id="system-requirements">System Requirements</h3>
 
 <ul>
-  <li><strong>Python Version</strong>: 3.10 or higher</li>
+  <li><strong>Python Version</strong>: 3.11 or higher</li>
   <li><strong>Package Manager</strong>: uv for dependency management (<a href="https://astral.sh/uv">installation guide</a>)</li>
+  <li><strong>Optional</strong>: just for simplified command execution (<a href="https://just.systems/install.sh">installation guide</a>)</li>
 </ul>
 
 <h3 id="installation--setup">Installation &amp; Setup</h3>
@@ -195,7 +200,33 @@ uv run http
 
 <span class="c"># Alternative: Run stdio server for local AI clients</span>
 uv run stdio
+
+<span class="c"># Or use just commands</span>
+just run      <span class="c"># HTTP server</span>
+just run-stdio <span class="c"># Stdio server</span>
 </code></pre></div></div>
+
+<h2 id="project-architecture">Project Architecture</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/mcp_app/
+├── main.py          # Application entry point and FastAPI setup
+├── config.py        # Pydantic configuration models
+├── context.py       # JWT context management for secure claim sharing
+├── handlers/        # OAuth endpoints handlers (RFC 8414 &amp; RFC 9728)
+├── middlewares/     # Custom middlewares (JWT, access logs, CORS)
+└── tools/           # MCP tools and registration router
+</code></pre></div></div>
+
+<h3 id="core-components">Core Components</h3>
+
+<ul>
+  <li><strong>main.py</strong>: Initializes FastMCP server, FastAPI app, middlewares, and OAuth endpoints</li>
+  <li><strong>config.py</strong>: TOML-based configuration with Pydantic models</li>
+  <li><strong>context.py</strong>: Async-safe JWT context sharing between middlewares and tools</li>
+  <li><strong>handlers/</strong>: OAuth authorization server and protected resource metadata endpoints</li>
+  <li><strong>middlewares/</strong>: JWT validation, access logging, and CORS handling</li>
+  <li><strong>tools/</strong>: MCP tool implementations and registration system</li>
+</ul>
 
 <h2 id="documentation--resources">Documentation &amp; Resources</h2>
 

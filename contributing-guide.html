@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42e00248506f1a8536e0fb3683cace81e5627b32">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=42f95aea65d716c01456d600394baa7e1ffc27de">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -158,9 +158,10 @@ just cov
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>src/mcp_app/
 ├── main.py          # Application entry point
 ├── config.py        # Configuration models
-├── handlers/        # OAuth handlers
+├── context.py       # JWT context management
+├── handlers/        # OAuth endpoints handlers
 ├── middlewares/     # Custom middlewares
-└── tools/           # MCP tools
+└── tools/           # MCP tools and router
 
 tests/               # Test files
 chart/               # Kubernetes Helm chart
@@ -171,16 +172,15 @@ chart/               # Kubernetes Helm chart
 <p>To add a new MCP tool:</p>
 
 <ol>
-  <li>Create the tool function in <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/router.py</code></li>
-  <li>Register it in the <code class="language-plaintext highlighter-rouge">register_tools()</code> function</li>
+  <li>Create the tool function in a new file under <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/</code> (e.g., <code class="language-plaintext highlighter-rouge">my_tool.py</code>)</li>
+  <li>Import and register it in <code class="language-plaintext highlighter-rouge">src/mcp_app/tools/router.py</code></li>
   <li>Add tests in <code class="language-plaintext highlighter-rouge">tests/test_tools.py</code></li>
   <li>Update documentation</li>
 </ol>
 
 <p>Example tool:</p>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">@</span><span class="n">mcp</span><span class="p">.</span><span class="n">tool</span><span class="p">()</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">my_tool</span><span class="p">(</span><span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">my_tool</span><span class="p">(</span><span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="s">"""Tool description.
 
     Args:
@@ -191,6 +191,15 @@ chart/               # Kubernetes Helm chart
     """</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s">"Processed: </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s">"</span>
 </code></pre></div></div>
+
+<p>Then register it in <code class="language-plaintext highlighter-rouge">router.py</code>:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mcp_app.tools.my_tool</span> <span class="kn">import</span> <span class="n">my_tool</span>
+
+<span class="k">def</span> <span class="nf">register_tools</span><span class="p">(</span><span class="n">mcp</span><span class="p">:</span> <span class="n">FastMCP</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">mcp</span><span class="p">.</span><span class="n">tool</span><span class="p">()(</span><span class="n">my_tool</span><span class="p">)</span>
+    <span class="c1"># ... other tools
+</span></code></pre></div></div>
 
 <h2 id="pull-request-process">Pull Request Process</h2>
 

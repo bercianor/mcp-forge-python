@@ -87,9 +87,10 @@ Types:
 src/mcp_app/
 ├── main.py          # Application entry point
 ├── config.py        # Configuration models
-├── handlers/        # OAuth handlers
+├── context.py       # JWT context management
+├── handlers/        # OAuth endpoints handlers
 ├── middlewares/     # Custom middlewares
-└── tools/           # MCP tools
+└── tools/           # MCP tools and router
 
 tests/               # Test files
 chart/               # Kubernetes Helm chart
@@ -99,16 +100,15 @@ chart/               # Kubernetes Helm chart
 
 To add a new MCP tool:
 
-1. Create the tool function in `src/mcp_app/tools/router.py`
-2. Register it in the `register_tools()` function
+1. Create the tool function in a new file under `src/mcp_app/tools/` (e.g., `my_tool.py`)
+2. Import and register it in `src/mcp_app/tools/router.py`
 3. Add tests in `tests/test_tools.py`
 4. Update documentation
 
 Example tool:
 
 ```python
-@mcp.tool()
-async def my_tool(param: str) -> str:
+def my_tool(param: str) -> str:
     """Tool description.
 
     Args:
@@ -118,6 +118,16 @@ async def my_tool(param: str) -> str:
         Result description
     """
     return f"Processed: {param}"
+```
+
+Then register it in `router.py`:
+
+```python
+from mcp_app.tools.my_tool import my_tool
+
+def register_tools(mcp: FastMCP) -> None:
+    mcp.tool()(my_tool)
+    # ... other tools
 ```
 
 ## Pull Request Process
