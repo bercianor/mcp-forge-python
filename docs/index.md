@@ -37,7 +37,7 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
     "MCP Protocol Implementation",
     "OAuth 2.0 Authentication",
     "JWT Validation",
-    "HTTP with SSE Transport",
+    "HTTP Streaming Transport",
     "Docker Deployment",
     "Kubernetes Helm Chart"
   ],
@@ -56,7 +56,7 @@ A comprehensive, production-ready MCP (Model Context Protocol) server template b
 ## Communication Transports
 
 - **Stdio Transport**: Standard input/output communication for local AI clients like Claude Desktop
-- **HTTP with SSE**: Server-Sent Events for real-time web-based communication
+- **HTTP Streaming**: Streamable HTTP for real-time web-based communication
 
 ## Built-in MCP Tools
 
@@ -109,7 +109,7 @@ uv sync
 # Install the MCP server package
 uv pip install -e .
 
-# Start HTTP server with SSE support
+# Start HTTP server with streaming support
 uv run http
 
 # Alternative: Run stdio server for local AI clients

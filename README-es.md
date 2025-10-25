@@ -22,7 +22,7 @@ Una plantilla completa y production-ready de servidor MCP (Model Context Protoco
 ## Transportes de Comunicación
 
 - **Transporte Stdio**: Comunicación entrada/salida estándar para clientes IA locales como Claude Desktop
-- **HTTP con SSE**: Eventos Server-Sent para comunicación web en tiempo real
+- **HTTP Streaming**: HTTP streamable para comunicación web en tiempo real
 
 ## Herramientas MCP Integradas
 
@@ -72,7 +72,7 @@ Una plantilla completa y production-ready de servidor MCP (Model Context Protoco
 
 - **Dependencias de producción**:
   - `fastapi`: Framework web ASGI
-  - `uvicorn[standard]`: Servidor ASGI con soporte SSE
+  - `uvicorn[standard]`: Servidor ASGI con soporte HTTP streaming
   - `pydantic`: Validación de datos
   - `pydantic-settings`: Configuración desde archivos
   - `tomli`: Parser TOML para Python < 3.11
@@ -97,7 +97,7 @@ uv sync
 # Instalar paquete (habilita comandos directos)
 uv pip install .
 
-# Ejecutar servidor HTTP con SSE
+# Ejecutar servidor HTTP con streaming
 uv run http
 
 # Ejecutar servidor stdio
@@ -133,7 +133,7 @@ just dev-stdio              # Ejecutar servidor stdio con MCP Inspector
 
 ### Transportes Soportados
 
-- **HTTP + SSE**: Para clientes remotos como Claude Web. Endpoint `/mcp` con SSE. Ejecuta con `uv run http`.
+- **HTTP Streaming**: Para clientes remotos como Claude Web. Endpoint `/mcp` con HTTP streaming. Ejecuta con `uv run http`.
 - **Stdio**: Para clientes locales como Claude Desktop. Ejecuta con `uv run stdio`.
 
 ## Configuración JWT

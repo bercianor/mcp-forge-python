@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Technical Details
 
 - Python 3.11+ support
-- FastAPI-based HTTP server with SSE
+- FastAPI-based HTTP server with streaming
 - JWT validation with local/external strategies
 - TOML configuration
 - Ruff linting and Pyright type checking
