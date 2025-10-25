@@ -137,7 +137,7 @@ class AuthConfig(BaseSettings):
 
     client_id: str
     client_secret: str
-    redirect_uri: str
+    redirect_uri: str | None = None
 
 
 class Configuration(BaseModel):

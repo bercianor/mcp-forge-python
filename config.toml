@@ -62,4 +62,3 @@ oauth_whitelist_domains = ["localhost", "yourdomain.com"]
 [auth]
 client_id = "YOUR_CLIENT_ID"
 client_secret = "YOUR_CLIENT_SECRET"
-redirect_uri = "http://localhost:8080/callback" # Cambia a prod
