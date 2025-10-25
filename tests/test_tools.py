@@ -1,6 +1,6 @@
 """Tests for tools module."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
