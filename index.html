@@ -4,7 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=e995eb8e785bf6f0af464517d7024fd8839f7498">
+    <link rel="stylesheet" href="/mcp-forge-python/assets/css/style.css?v=93812387177537be70ddc1e02ebd413a6c029aee">
     <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Setup theme-color -->
@@ -102,7 +102,7 @@
     "MCP Protocol Implementation",
     "OAuth 2.0 Authentication",
     "JWT Validation",
-    "HTTP with SSE Transport",
+    "HTTP Streaming Transport",
     "Docker Deployment",
     "Kubernetes Helm Chart"
   ],
@@ -124,7 +124,7 @@
 
 <ul>
   <li><strong>Stdio Transport</strong>: Standard input/output communication for local AI clients like Claude Desktop</li>
-  <li><strong>HTTP with SSE</strong>: Server-Sent Events for real-time web-based communication</li>
+  <li><strong>HTTP Streaming</strong>: Streamable HTTP for real-time web-based communication</li>
 </ul>
 
 <h2 id="built-in-mcp-tools">Built-in MCP Tools</h2>
@@ -195,7 +195,7 @@ uv <span class="nb">sync</span>
 <span class="c"># Install the MCP server package</span>
 uv pip <span class="nb">install</span> <span class="nt">-e</span> <span class="nb">.</span>
 
-<span class="c"># Start HTTP server with SSE support</span>
+<span class="c"># Start HTTP server with streaming support</span>
 uv run http
 
 <span class="c"># Alternative: Run stdio server for local AI clients</span>
