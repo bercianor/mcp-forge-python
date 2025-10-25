@@ -96,17 +96,6 @@ Beyond MCP protocol endpoints, the server provides:
   - `httpx`: Asynchronous HTTP client
   - `PyJWT`: JWT handling
   - `requests`: Synchronous HTTP client
-
-- **Production dependencies**:
-  - `fastapi`: ASGI web framework
-  - `uvicorn[standard]`: ASGI server with SSE support
-  - `pydantic`: Data validation
-  - `pydantic-settings`: Configuration from files
-  - `tomli`: TOML parser for Python < 3.11 (uses `tomllib` for Python 3.11+)
-  - `mcp[cli]`: MCP Python SDK
-  - `httpx`: Asynchronous HTTP client
-  - `PyJWT`: JWT handling
-  - `requests`: Synchronous HTTP client
   - `cryptography`: Cryptographic operations
 
 - **Development dependencies**:
