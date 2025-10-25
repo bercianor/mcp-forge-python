@@ -1,0 +1,45 @@
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first | replace(from="Added", to="✨ Added") | replace(from="Fixed", to="🐛 Fixed") | replace(from="Documentation", to="📚 Documentation") | replace(from="Performance", to="⚡ Performance") | replace(from="Refactored", to="🔄 Refactored") | replace(from="Styling", to="💅 Styling") | replace(from="Testing", to="🧪 Testing") | replace(from="Miscellaneous Tasks", to="🔧 Miscellaneous Tasks") | replace(from="Dependencies", to="📦 Dependencies") }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{commit.scope}}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}]({{ self::remote_url() }}/commit/{{ commit.id }}))
+{% endfor %}
+{% endfor %}
+
+{% if contributors %}
+## Contributors
+{% for contributor in contributors %}
+- [@{{ contributor.username }}]({{ self::remote_url() }}/commits?author={{ contributor.username }})
+{% endfor %}
+{% endif %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+commit_parsers = [
+  { message = "^feat", group = "Added"},
+  { message = "^fix", group = "Fixed"},
+  { message = "^doc", group = "Documentation"},
+  { message = "^perf", group = "Performance"},
+  { message = "^refactor", group = "Refactored"},
+  { message = "^style", group = "Styling"},
+  { message = "^test", group = "Testing"},
+  { message = "^chore\\(release\\): prepare for", skip = true},
+  { message = "^chore", group = "Miscellaneous Tasks"},
+  { message = "^build", group = "Dependencies"},
+]
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9].*"
+skip_tags = ""
+ignore_tags = ""
+topo_order = false
+sort_commits = "oldest"
+
+[remote.github]
+token = "${{ secrets.GITHUB_TOKEN }}"

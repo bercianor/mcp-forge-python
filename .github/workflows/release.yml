@@ -34,7 +34,7 @@ jobs:
 
       - name: Generate Changelog
         run: |
-          git-cliff --latest --strip header --prepend CHANGELOG.md --tag ${{ inputs.tag }}
+          git-cliff --latest --strip header --prepend CHANGELOG.md --tag ${{ inputs.tag }} --github-repo ${{ github.repository }} --github-token ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit Changelog
         run: |
@@ -43,9 +43,17 @@ jobs:
           git add CHANGELOG.md
           git commit -m "chore: update changelog for ${{ inputs.version }}" || echo "No changes to commit"
 
-      - name: Push Changelog
+      - name: Tag release
         run: |
-          git push
+          git tag ${{ inputs.tag }}
+
+      - name: Generate Release Notes
+        run: |
+          git-cliff --latest --strip header --github-repo ${{ github.repository }} --github-token ${{ secrets.GITHUB_TOKEN }} > release_notes.md
+
+      - name: Push master and tags
+        run: |
+          git push origin master --tags
 
       - name: Create Release
         uses: actions/create-release@v1
@@ -54,7 +62,7 @@ jobs:
         with:
           tag_name: ${{ inputs.tag }}
           release_name: Release ${{ inputs.version }}
-          body_path: CHANGELOG.md
+          body_path: release_notes.md
           draft: false
           prerelease: false
 
