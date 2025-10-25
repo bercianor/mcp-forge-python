@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from mcp_app.context import jwt_context_config, jwt_payload, set_exposed_claims, set_jwt_context
-from mcp_app.mcp_components.resources.flamingock_docs import get_flamingock_docs
 from mcp_app.mcp_components.router import register_tools
 from mcp_app.mcp_components.tools.hello_world import hello_world
 from mcp_app.mcp_components.tools.whoami import whoami
